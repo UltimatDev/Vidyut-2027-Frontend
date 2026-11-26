@@ -1,0 +1,897 @@
+/* ArcShowcaseSection.css */
+
+html {
+  scroll-behavior: smooth;
+}
+
+.fest-events-viewport {
+  --bg-black: #000000;
+  --deep-indigo: #150050;
+  --royal-violet: #3F0071;
+  --neon-magenta: #FB2576;
+  --text-white: #FFFFFF;
+
+  position: relative;
+  background-color: var(--bg-black);
+  color: var(--text-white);
+  min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 2.75rem 3vw 2.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-family: "Frontage", "Space Grotesk", sans-serif;
+  overflow: hidden;
+}
+
+/* =========================================================
+   TOP ENTRY HORIZON LINE SWEEP
+   ========================================================= */
+.section-entry-horizon {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--royal-violet) 20%,
+    var(--neon-magenta) 50%,
+    var(--royal-violet) 80%,
+    transparent 100%
+  );
+  transform: scaleX(0);
+  transform-origin: center center;
+  opacity: 0;
+  transition: transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.6s ease;
+  z-index: 5;
+}
+
+.fest-events-viewport.section-entered .section-entry-horizon {
+  transform: scaleX(1);
+  opacity: 1;
+}
+
+/* =========================================================
+   ANIMATED SCROLLING RETRO GRID FLOOR (BOTTOM HALF ONLY)
+   ========================================================= */
+.retro-grid-stage {
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 52vh;
+  perspective: 360px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.retro-grid-stage.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.retro-grid-plane {
+  position: absolute;
+  inset: -60% -50% 0 -50%;
+  transform-origin: center bottom;
+  transform: rotateX(72deg);
+  background-image:
+    linear-gradient(
+      to right,
+      rgba(251, 37, 118, 0.34) 1.5px,
+      transparent 1.5px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(115, 25, 195, 0.48) 1.5px,
+      transparent 1.5px
+    );
+  background-size: 68px 68px;
+  animation: retroGridForward 2.6s linear infinite;
+  will-change: background-position;
+}
+
+.retro-grid-horizon-fade {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    #000000 0%,
+    rgba(0, 0, 0, 0.72) 28%,
+    rgba(21, 0, 80, 0.14) 75%,
+    rgba(21, 0, 80, 0.28) 100%
+  );
+}
+
+@keyframes retroGridForward {
+  0% {
+    background-position: 0px 0px;
+  }
+  100% {
+    background-position: 0px 68px;
+  }
+}
+
+/* =========================================================
+   CHOREOGRAPHED STAGGERED ENTRANCE STATES
+   ========================================================= */
+.street-sign-header,
+.comet-perspective-wrapper,
+.arc-track,
+.center-drone-stage,
+.fest-bottom-bar {
+  opacity: 0;
+  transition:
+    opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1) var(--stagger-delay, 0ms),
+    transform 0.85s cubic-bezier(0.16, 1, 0.3, 1) var(--stagger-delay, 0ms);
+}
+
+/* Cards rise up with 3D pitch */
+.comet-perspective-wrapper {
+  transform: translateY(65px) scale(0.92);
+}
+
+.arc-track {
+  transform: translateY(20px);
+}
+
+/* Center drone drops in smoothly */
+.center-drone-stage {
+  transform: translateY(-28px) scale(0.75);
+}
+
+.fest-bottom-bar {
+  transform: translateY(32px);
+}
+
+.comet-perspective-wrapper.is-revealed,
+.arc-track.is-revealed,
+.center-drone-stage.is-revealed,
+.fest-bottom-bar.is-revealed {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* =========================================================
+   FOREGROUND 3-TRACK DESKTOP GRID (LEFT | DRONE | RIGHT)
+   ========================================================= */
+.fest-foreground-layer {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 1580px;
+  margin: 0 auto;
+  gap: 2rem;
+}
+
+.fest-dual-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 260px minmax(0, 1fr);
+  gap: 0.75rem;
+  align-items: center;
+  width: 100%;
+}
+
+.showcase-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 0;
+}
+
+/* Center Wireframe Drone Stage */
+.center-drone-stage {
+  position: relative;
+  width: 260px;
+  height: 270px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.drone-canvas-box {
+  width: 260px;
+  height: 240px;
+  overflow: visible;
+}
+
+.drone-telemetry-tag {
+  font-family: monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.16em;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: -6px;
+  transition: color 0.3s ease;
+}
+
+.drone-telemetry-tag.is-locked {
+  color: var(--neon-magenta);
+}
+
+/* =========================================================
+   STREET SIGN HEADERS (DIRECTIONAL SLIDE-IN + KINETIC HOVER)
+   ========================================================= */
+.street-sign-header {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 7px;
+  margin-bottom: 1.65rem;
+  /* Left banner slides in from the left */
+  transform: skewX(-16deg) translateX(-55px);
+  user-select: none;
+  cursor: pointer;
+}
+
+.street-sign-header.is-revealed {
+  opacity: 1;
+  transform: skewX(-16deg) translateX(0);
+}
+
+.street-sign-header.is-flipped {
+  flex-direction: row-reverse;
+  /* Right banner slides in from the right */
+  transform: skewX(16deg) translateX(55px);
+}
+
+.street-sign-header.is-flipped.is-revealed {
+  opacity: 1;
+  transform: skewX(16deg) translateX(0);
+}
+
+.street-sign-header.is-revealed.is-active,
+.street-sign-header.is-revealed:hover {
+  transform: skewX(-16deg) translate(-2px, -3px) scale(1.03);
+}
+
+.street-sign-header.is-flipped.is-revealed.is-active,
+.street-sign-header.is-flipped.is-revealed:hover {
+  transform: skewX(16deg) translate(2px, -3px) scale(1.03);
+}
+
+.sign-slash {
+  display: block;
+  width: 11px;
+  background-color: var(--neon-magenta);
+  box-shadow: 4px 4px 0px var(--royal-violet);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.street-sign-header.is-flipped .sign-slash {
+  box-shadow: -4px 4px 0px var(--royal-violet);
+}
+
+.sign-slash.slash-2 {
+  width: 15px;
+}
+
+.street-sign-header:hover .sign-slash.slash-1 {
+  transform: translateX(-3px);
+}
+
+.street-sign-header.is-flipped:hover .sign-slash.slash-1 {
+  transform: translateX(3px);
+}
+
+.sign-plate {
+  background-color: var(--neon-magenta);
+  padding: 0.55rem 1.65rem;
+  box-shadow: 5px 5px 0px var(--royal-violet);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: box-shadow 0.25s ease;
+}
+
+.street-sign-header.is-flipped .sign-plate {
+  box-shadow: -5px 5px 0px var(--royal-violet);
+}
+
+.street-sign-header:hover .sign-plate {
+  box-shadow: 7px 7px 0px var(--deep-indigo);
+}
+
+.street-sign-header.is-flipped:hover .sign-plate {
+  box-shadow: -7px 7px 0px var(--deep-indigo);
+}
+
+.sign-text {
+  display: inline-block;
+  transform: skewX(16deg);
+  color: var(--bg-black);
+  font-size: clamp(1.05rem, 1.6vw, 1.45rem);
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+  transition: letter-spacing 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.street-sign-header:hover .sign-text {
+  letter-spacing: 0.14em;
+}
+
+.street-sign-header.is-flipped .sign-text {
+  transform: skewX(-16deg);
+}
+
+/* =========================================================
+   INNER COLUMN STAGE: CARD + ARC
+   ========================================================= */
+.column-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+  width: 100%;
+  min-height: 430px;
+}
+
+.showcase-column.col-right .column-stage {
+  flex-direction: row-reverse;
+}
+
+.comet-perspective-wrapper {
+  perspective: 900px;
+  transform-style: preserve-3d;
+  flex-shrink: 0;
+  width: clamp(210px, 16.5vw, 260px);
+  z-index: 20;
+}
+
+.comet-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 11px 11px 9px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #1b0542 0%, #0d0026 100%);
+  border: 1.5px solid var(--royal-violet);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.95),
+              inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  text-decoration: none;
+  color: var(--text-white);
+  position: relative;
+  transform-style: preserve-3d;
+  touch-action: none;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+  will-change: transform;
+}
+
+.comet-card.is-highlighted {
+  border-color: var(--neon-magenta);
+  box-shadow: 0 28px 60px rgba(251, 37, 118, 0.28),
+              inset 0 1px 0 rgba(251, 37, 118, 0.45);
+}
+
+.comet-sheen {
+  position: absolute;
+  inset: 0;
+  border-radius: 16px;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.comet-poster-window {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1.414;
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: var(--deep-indigo);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transform: translateZ(14px);
+  transform-style: preserve-3d;
+}
+
+.comet-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  animation: posterSoftFade 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes posterSoftFade {
+  from {
+    opacity: 0.45;
+    transform: scale(1.03);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.comet-card.is-highlighted .comet-poster-img {
+  transform: scale(1.04);
+}
+
+.comet-top-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(0, 0, 0, 0.88);
+  color: var(--neon-magenta);
+  border: 1px solid var(--neon-magenta);
+  padding: 0.25rem 0.55rem;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  border-radius: 4px;
+  transform: translateZ(22px);
+  z-index: 2;
+}
+
+.comet-hover-drawer {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 0.85rem 0.75rem 0.7rem;
+  background: linear-gradient(to top, #000000 10%, rgba(21, 0, 80, 0.92) 80%, transparent 100%);
+  border-top: 1.5px solid var(--neon-magenta);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transform: translateY(100%) translateZ(18px);
+  opacity: 0;
+  transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.28s ease;
+  z-index: 3;
+}
+
+.comet-card.is-highlighted .comet-hover-drawer {
+  transform: translateY(0) translateZ(18px);
+  opacity: 1;
+}
+
+.comet-drawer-sub {
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.comet-drawer-cta {
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: var(--neon-magenta);
+}
+
+.comet-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 9px;
+  padding-inline: 4px;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  transform: translateZ(8px);
+}
+
+.comet-footer-title {
+  font-weight: 700;
+  color: var(--text-white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 72%;
+}
+
+.comet-footer-code {
+  font-family: monospace;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* =========================================================
+   WHEEL / DRAG / KEYBOARD CURVED ARC CAROUSEL
+   ========================================================= */
+.arc-track {
+  position: relative;
+  flex: 1;
+  height: 360px;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: pan-y;
+  outline: none;
+
+  -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 18%,
+      #000 82%,
+      transparent 100%
+    ),
+    linear-gradient(to right, transparent 0%, #000 10%, #000 94%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 18%,
+      #000 82%,
+      transparent 100%
+    ),
+    linear-gradient(to right, transparent 0%, #000 10%, #000 94%, transparent 100%);
+  mask-composite: intersect;
+}
+
+.arc-track:active {
+  cursor: grabbing;
+}
+
+.arc-track:focus-visible {
+  outline: 1px dashed rgba(251, 37, 118, 0.55);
+  outline-offset: 4px;
+}
+
+.showcase-column.col-right .arc-track {
+  -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 18%,
+      #000 82%,
+      transparent 100%
+    ),
+    linear-gradient(to left, transparent 0%, #000 10%, #000 94%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 18%,
+      #000 82%,
+      transparent 100%
+    ),
+    linear-gradient(to left, transparent 0%, #000 10%, #000 94%, transparent 100%);
+  mask-composite: intersect;
+}
+
+.arc-items-list {
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.arc-node {
+  position: absolute;
+  left: 14px;
+  transform-origin: left center;
+  transition: transform 0.68s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.58s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.showcase-column.col-right .arc-node {
+  left: auto;
+  right: 14px;
+  transform-origin: right center;
+  text-align: right;
+}
+
+.arc-node-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.42);
+  padding: 6px 0;
+  transition: color 0.35s ease;
+}
+
+.arc-node.is-active .arc-node-link,
+.arc-node:hover .arc-node-link {
+  color: var(--neon-magenta);
+}
+
+.arc-arrow {
+  color: var(--neon-magenta);
+  font-size: 0.9rem;
+}
+
+.arc-node-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.arc-node-title {
+  font-size: clamp(0.85rem, 1.12vw, 1.1rem);
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.arc-node-subtitle {
+  font-size: 0.58rem;
+  letter-spacing: 0.11em;
+  color: rgba(251, 37, 118, 0.85);
+  margin-top: 2px;
+}
+
+.arc-mobile-controls {
+  display: none;
+}
+
+/* =========================================================
+   STREET SIGN VIEW MORE CTA BUTTON
+   ========================================================= */
+.fest-bottom-bar {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+.street-sign-btn {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 7px;
+  text-decoration: none;
+  transform: skewX(-16deg);
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.street-sign-btn .sign-slash {
+  width: 10px;
+  background-color: var(--neon-magenta);
+  box-shadow: 4px 4px 0px var(--royal-violet);
+}
+
+.street-sign-btn .sign-slash.slash-2 {
+  width: 14px;
+}
+
+.sign-btn-plate {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 2.1rem;
+  background-color: var(--deep-indigo);
+  color: var(--text-white);
+  border: 2px solid var(--neon-magenta);
+  box-shadow: 5px 5px 0px var(--royal-violet);
+  font-size: 0.88rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition: background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.sign-btn-plate > span {
+  display: inline-block;
+  transform: skewX(16deg);
+}
+
+.street-sign-btn:hover {
+  transform: skewX(-16deg) translate(-2px, -3px);
+}
+
+.street-sign-btn:hover .sign-btn-plate {
+  background-color: var(--neon-magenta);
+  color: var(--bg-black);
+  box-shadow: 7px 7px 0px var(--royal-violet);
+}
+
+.street-sign-btn:hover .sign-slash {
+  box-shadow: 6px 6px 0px var(--royal-violet);
+}
+
+/* =========================================================
+   RESPONSIVE BREAKPOINTS (TABLET & PHONE WITH FULL 3D)
+   ========================================================= */
+@media (max-width: 1280px) {
+  .fest-dual-grid {
+    grid-template-columns: minmax(0, 1fr) 210px minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+
+  .center-drone-stage {
+    width: 210px;
+    height: 230px;
+  }
+
+  .drone-canvas-box {
+    width: 210px;
+    height: 205px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .fest-events-viewport {
+    height: auto;
+    min-height: 100vh;
+    padding: 3rem 5vw;
+  }
+
+  .fest-dual-grid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3.25rem;
+  }
+
+  .center-drone-stage {
+    width: 250px;
+    height: 220px;
+    margin: -1rem 0;
+  }
+
+  .drone-canvas-box {
+    width: 250px;
+    height: 195px;
+  }
+
+  .showcase-column {
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .column-stage,
+  .showcase-column.col-right .column-stage {
+    flex-direction: column;
+    gap: 1.75rem;
+    min-height: auto;
+  }
+
+  .comet-perspective-wrapper {
+    perspective: 750px;
+    width: clamp(235px, 64vw, 290px);
+  }
+
+  .comet-card.is-left {
+    box-shadow: -8px 22px 45px rgba(0, 0, 0, 0.92),
+                4px 4px 0px var(--royal-violet),
+                inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  }
+
+  .comet-card.is-right {
+    box-shadow: 8px 22px 45px rgba(0, 0, 0, 0.92),
+                -4px 4px 0px var(--royal-violet),
+                inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  }
+
+  .comet-card.is-highlighted {
+    box-shadow: 0 26px 55px rgba(251, 37, 118, 0.32),
+                0 6px 0px var(--neon-magenta),
+                inset 0 1px 0 rgba(251, 37, 118, 0.5);
+  }
+
+  .arc-track,
+  .showcase-column.col-right .arc-track {
+    width: 100%;
+    height: 112px;
+    flex: none;
+    touch-action: pan-x;
+    flex-direction: column;
+    justify-content: space-between;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      #000 14%,
+      #000 86%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0%,
+      #000 14%,
+      #000 86%,
+      transparent 100%
+    );
+  }
+
+  .arc-items-list {
+    height: 68px;
+    width: 100%;
+  }
+
+  .arc-node,
+  .showcase-column.col-right .arc-node {
+    left: 50%;
+    right: auto;
+    top: 6px;
+    transform-origin: center center;
+    text-align: center;
+  }
+
+  .arc-node-link {
+    justify-content: center;
+  }
+
+  .arc-node-title {
+    font-size: 1rem;
+  }
+
+  .arc-mobile-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    z-index: 25;
+  }
+
+  .arc-step-btn {
+    background: var(--deep-indigo);
+    color: var(--text-white);
+    border: 1px solid var(--neon-magenta);
+    width: 30px;
+    height: 28px;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .arc-step-btn:active {
+    background: var(--neon-magenta);
+    color: var(--bg-black);
+  }
+
+  .arc-dots {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .arc-dot {
+    width: 7px;
+    height: 7px;
+    padding: 0;
+    border: none;
+    background: rgba(255, 255, 255, 0.28);
+    transform: skewX(-16deg);
+    cursor: pointer;
+    transition: width 0.25s ease, background-color 0.25s ease;
+  }
+
+  .arc-dot.is-active {
+    width: 20px;
+    background: var(--neon-magenta);
+  }
+}
+
+@media (max-width: 480px) {
+  .fest-events-viewport {
+    padding: 2.25rem 4vw;
+  }
+
+  .sign-plate {
+    padding: 0.45rem 1.25rem;
+  }
+
+  .sign-text {
+    font-size: 1rem;
+  }
+
+  .comet-perspective-wrapper {
+    width: 74vw;
+    max-width: 265px;
+  }
+
+  .retro-grid-stage {
+    height: 40vh;
+  }
+}

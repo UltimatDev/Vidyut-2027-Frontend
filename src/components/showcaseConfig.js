@@ -1,0 +1,110 @@
+// showcaseConfig.js
+
+export const showcaseConfig = {
+  viewMore: {
+    label: "VIEW MORE",
+    link: "/events",
+  },
+  workshops: {
+    sectionTitle: "WORKSHOPS",
+    side: "left",
+    items: [
+      {
+        id: "ws-1",
+        code: "#WS-01",
+        title: "GENERATIVE AI",
+        subtitle: "HANDS-ON MODEL DEPLOYMENT",
+        tag: "DAY 1 • LAB 01",
+        image: "/assets/posters/workshops/genai.jpg", // A3 ratio (1 : 1.414)
+        link: "/workshops/generative-ai",
+      },
+      {
+        id: "ws-2",
+        code: "#WS-02",
+        title: "AUTONOMOUS DRONE",
+        subtitle: "FLIGHT DYNAMICS & ROS2",
+        tag: "DAY 1 • ARENA A",
+        image: "/assets/posters/workshops/drones.jpg",
+        link: "/workshops/autonomous-drones",
+      },
+      {
+        id: "ws-3",
+        code: "#WS-03",
+        title: "CYBER FORENSICS",
+        subtitle: "ZERO-DAY EXPLOIT ANALYSIS",
+        tag: "DAY 2 • LAB 03",
+        image: "/assets/posters/workshops/cyber.jpg",
+        link: "/workshops/cyber-forensics",
+      },
+      {
+        id: "ws-4",
+        code: "#WS-04",
+        title: "UI MOTION",
+        subtitle: "WEBGL & KINETIC INTERFACES",
+        tag: "DAY 2 • STUDIO B",
+        image: "/assets/posters/workshops/shaders.jpg",
+        link: "/workshops/ui-motion-shaders",
+      },
+      {
+        id: "ws-5",
+        code: "#WS-05",
+        title: "EV POWERTRAIN",
+        subtitle: "BATTERY THERMAL ARCHITECTURE",
+        tag: "DAY 3 • MECH BAY",
+        image: "/assets/posters/workshops/ev.jpg",
+        link: "/workshops/ev-powertrain",
+      },
+    ],
+  },
+  competitions: {
+    sectionTitle: "COMPETITIONS",
+    side: "right",
+    items: [
+      {
+        id: "comp-1",
+        code: "#COMP-01",
+        title: "ROBOWARS",
+        subtitle: "60KG HEAVYWEIGHT COMBAT",
+        tag: "PRIZE POOL • ₹1,50,000",
+        image: "/assets/posters/competitions/robowars.jpg", // A3 ratio (1 : 1.414)
+        link: "/competitions/robowars",
+      },
+      {
+        id: "comp-2",
+        code: "#COMP-02",
+        title: "HACK-A-THON 36",
+        subtitle: "36-HOUR PRODUCT SPRINT",
+        tag: "PRIZE POOL • ₹1,00,000",
+        image: "/assets/posters/competitions/hackathon.jpg",
+        link: "/competitions/hackathon-36",
+      },
+      {
+        id: "comp-3",
+        code: "#COMP-03",
+        title: "CHOREO NITE",
+        subtitle: "SYNCHRONIZED STAGE SHOWDOWN",
+        tag: "PRIZE POOL • ₹80,000",
+        image: "/assets/posters/competitions/choreo.jpg",
+        link: "/competitions/choreo-nite",
+      },
+      {
+        id: "comp-4",
+        code: "#COMP-04",
+        title: "DRONE RACING",
+        subtitle: "FPV OBSTACLE TIME TRIAL",
+        tag: "PRIZE POOL • ₹60,000",
+        image: "/assets/posters/competitions/drone-race.jpg",
+        link: "/competitions/drone-racing",
+      },
+      {
+        id: "comp-5",
+        code: "#COMP-05",
+        title: "BATTLE OF BANDS",
+        subtitle: "LIVE AMPLIFIED CLASH",
+        tag: "PRIZE POOL • ₹75,000",
+        image: "/assets/posters/competitions/bands.jpg",
+        link: "/competitions/battle-of-bands",
+      },
+    ],
+  },
+};

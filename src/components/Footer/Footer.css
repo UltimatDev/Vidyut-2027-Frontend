@@ -1,0 +1,192 @@
+.vidyut-footer {
+  width: 100%;
+  background-color: #000000;
+  color: #ffffff;
+  padding: 4rem 1.5rem 2.5rem;
+  box-sizing: border-box;
+  overflow: hidden;
+  user-select: none;
+}
+
+.vidyut-footer-container {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Oversized Wordmark */
+.vidyut-wordmark {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'Frontage Regular',  'Impact', 'Arial Black', sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  line-height: 0.85;
+  font-size: clamp(3.2rem, 17vw, 15.5rem);
+  margin-bottom: 3.5rem;
+}
+
+.vidyut-wordmark-letter {
+  display: inline-block;
+  transform: scaleY(1.25);
+  transform-origin: center;
+  color: #ffffff;
+}
+
+/* Middle Content: Logo/Socials + Navigation Links */
+.vidyut-footer-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 3rem;
+  margin-bottom: 4rem;
+}
+
+.vidyut-brand-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.vidyut-footer-logo {
+  width: 4.5rem;
+  height: 4.5rem;
+  object-fit: contain;
+}
+
+.vidyut-social-links {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.vidyut-social-link {
+  color: rgba(255, 255, 255, 0.9);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.vidyut-social-link:hover {
+  color: #FB2576;
+  transform: translateY(-2px);
+}
+
+.vidyut-social-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  fill: currentColor;
+}
+
+/* Navigation Columns */
+.vidyut-links-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem 3rem;
+  width: 100%;
+}
+
+.vidyut-link-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.vidyut-nav-link {
+  color: rgba(255, 255, 255, 0.85);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.vidyut-nav-link:hover {
+  color: #ffffff;
+}
+
+/* Bottom Copyright */
+.vidyut-footer-bottom {
+  width: 100%;
+  text-align: center;
+  padding-top: 1rem;
+}
+
+.vidyut-copyright {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.03em;
+}
+
+/* Tablet & Small Desktop (640px+) */
+@media (min-width: 640px) {
+  .vidyut-links-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 2rem 3.5rem;
+  }
+}
+
+/* Desktop (768px+) */
+@media (min-width: 768px) {
+  .vidyut-footer {
+    padding: 5rem 4rem 2.5rem;
+  }
+
+  .vidyut-wordmark {
+    margin-bottom: 5.5rem;
+  }
+
+  .vidyut-footer-main {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 2rem;
+  }
+
+  .vidyut-brand-section {
+    align-items: center;
+  }
+
+  .vidyut-footer-logo {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .vidyut-links-grid {
+    width: auto;
+    gap: 2rem 5.5rem;
+  }
+
+  .vidyut-nav-link {
+    font-size: 1rem;
+  }
+
+  .vidyut-copyright {
+    font-size: 0.875rem;
+  }
+}
+
+/* --- FRONTAGE FONT FACES --- */
+@font-face {
+  font-family: 'Frontage Bold';
+  src: url('../../assets/fonts/Frontage-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Frontage Regular';
+  src: url('../../assets/fonts/Frontage-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
