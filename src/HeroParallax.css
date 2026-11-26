@@ -6,7 +6,7 @@ body,
   padding: 0;
   width: 100%;
   background-color: #050101;
-  overflow-x: clip; /* clip preserves position: sticky while preventing horizontal overflow */
+  overflow-x: clip;
   scroll-behavior: smooth;
 }
 
@@ -28,7 +28,7 @@ body,
 }
 
 /* ============================================================================
-   RITUAL PRELOADER ("BE THE FLAME / BRIGHT / ... -> CLICK TO BE THE CHANGE")
+   RAGAM-INSPIRED CONCENTRIC VIDYUT VORTEX + PROMINENT LOGO + UNDERSCORE LOADER
    ============================================================================ */
 .ritual-preloader-screen {
   position: fixed;
@@ -41,42 +41,186 @@ body,
   background-color: #050101;
   user-select: none;
   overflow: hidden;
+  touch-action: none;
+  transition: opacity 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.48s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .ritual-preloader-screen.preloader-ready {
   cursor: pointer;
 }
 
-.preloader-ember-halo {
+.ritual-preloader-screen.preloader-exiting {
+  opacity: 0;
+  transform: scale(1.18);
+  pointer-events: none;
+}
+
+/* Concentric Full-360° VIDYUT Typography Vortex */
+.ragam-vortex-layer {
   position: absolute;
-  width: min(65vw, 620px);
-  height: min(65vw, 620px);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.ragam-vortex-svg {
+  width: 135vmax;
+  height: 135vmax;
+  overflow: visible;
+}
+
+.vortex-ring-group {
+  transform-origin: 500px 500px;
+  will-change: transform;
+}
+
+.vortex-ring-text {
+  font-family: 'Frontage Bold', sans-serif;
+  font-weight: 700;
+  fill: #c91806;
+}
+
+.ring-cw-fast {
+  opacity: 0.34;
+  animation: spinVortexCW 22s linear infinite;
+}
+
+.ring-ccw-med {
+  opacity: 0.46;
+  animation: spinVortexCCW 28s linear infinite;
+}
+
+.ring-cw-slow {
+  opacity: 0.58;
+  animation: spinVortexCW 36s linear infinite;
+}
+
+.ring-ccw-slow {
+  opacity: 0.68;
+  animation: spinVortexCCW 42s linear infinite;
+}
+
+.ring-cw-med {
+  opacity: 0.8;
+  animation: spinVortexCW 34s linear infinite;
+}
+
+.ring-ccw-fast {
+  opacity: 0.9;
+  animation: spinVortexCCW 26s linear infinite;
+}
+
+@keyframes spinVortexCW {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinVortexCCW {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+
+/* Dark Radial Eye behind the Logo so the Logo pops cleanly over the Vortex */
+.vortex-center-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: radial-gradient(
+    circle at 50% 50%,
+    rgba(5, 1, 1, 0.96) 0%,
+    rgba(5, 1, 1, 0.82) 24%,
+    rgba(5, 1, 1, 0.25) 54%,
+    rgba(5, 1, 1, 0.65) 100%
+  );
+}
+
+/* Prominent Background Logo / Emblem Watermark (z-index: 2 above vignette, below text) */
+.preloader-bg-logo-wrap {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: clamp(230px, 32vw, 390px);
+  height: clamp(230px, 32vw, 390px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 2;
+  animation: logoRevealAndPulse 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+    logoWatermarkPulse 4.2s ease-in-out 0.65s infinite alternate;
+}
+
+.preloader-logo-backglow {
+  position: absolute;
+  inset: 12%;
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(255, 110, 20, 0.16) 0%,
-    rgba(160, 20, 5, 0.08) 45%,
-    transparent 72%
+    rgba(255, 120, 25, 0.34) 0%,
+    rgba(190, 30, 5, 0.16) 50%,
+    transparent 5%
   );
-  filter: blur(32px);
-  pointer-events: none;
-  animation: preloaderHaloPulse 3.5s ease-in-out infinite alternate;
+  filter: blur(22px);
 }
 
-@keyframes preloaderHaloPulse {
+@keyframes logoRevealAndPulse {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes logoWatermarkPulse {
   0% {
-    transform: scale(0.92);
-    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(0.97);
+    filter: brightness(0.15);
   }
   100% {
-    transform: scale(1.1);
-    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.04);
+    filter: brightness(0.65);
   }
 }
 
+.preloader-crest-svg {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 0 28px rgba(255, 95, 20, 0.45));
+}
+
+.preloader-custom-logo {
+  position: relative;
+  width: 78%;
+  height: 78%;
+  object-fit: contain;
+  opacity: 0.64;
+  filter: brightness(1.2) contrast(1.1)
+    drop-shadow(0 0 28px rgba(255, 120, 25, 0.55));
+}
+
+/* Center Lockup: CLICK TO / BE THE [________] (z-index: 3 above logo) */
 .preloader-center-stack {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -85,13 +229,14 @@ body,
 }
 
 .preloader-click-cue {
-  margin-bottom: 1.4vh;
+  margin-bottom: 1.5vh;
   font-family: 'Frontage Regular', sans-serif;
-  font-size: clamp(0.65rem, 1.05vw, 0.9rem);
-  letter-spacing: 0.42em;
-  text-indent: 0.42em;
-  color: rgba(255, 200, 125, 0.9);
-  transition: opacity 0.5s ease, transform 0.5s ease;
+  font-size: clamp(0.66rem, 1.05vw, 0.9rem);
+  letter-spacing: 0.46em;
+  text-indent: 0.46em;
+  color: #ffcf75;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.95);
+  transition: opacity 0.45s ease, transform 0.45s ease;
 }
 
 .preloader-click-cue.cue-hidden {
@@ -102,18 +247,19 @@ body,
 .preloader-click-cue.cue-visible {
   opacity: 1;
   transform: translateY(0);
-  animation: clickPromptPulse 1.8s ease-in-out infinite alternate;
+  animation: clickPromptPulse 1.7s ease-in-out infinite alternate;
 }
 
 @keyframes clickPromptPulse {
   0% {
-    opacity: 0.55;
-    letter-spacing: 0.4em;
+    opacity: 0.65;
+    letter-spacing: 0.44em;
   }
   100% {
     opacity: 1;
-    letter-spacing: 0.48em;
-    text-shadow: 0 0 14px rgba(255, 175, 65, 0.75);
+    letter-spacing: 0.54em;
+    text-shadow: 0 0 16px rgba(255, 180, 65, 0.9),
+      0 2px 12px rgba(0, 0, 0, 0.95);
   }
 }
 
@@ -122,36 +268,45 @@ body,
   flex-wrap: wrap;
   align-items: baseline;
   justify-content: center;
-  gap: 0.35em;
+  gap: 0.38em;
   font-family: 'Frontage Bold', sans-serif;
-  font-size: clamp(1.5rem, 5vw, 4.6rem);
+  font-size: clamp(1.55rem, 4.8vw, 4.4rem);
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: 0.12em;
 }
 
 .mantra-prefix {
-  color: rgba(255, 244, 228, 0.85);
+  color: #fff6e8;
+  text-shadow: 0 4px 26px rgba(0, 0, 0, 0.95);
 }
 
-.mantra-dynamic-word {
+.mantra-underscore-slot {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 7.4ch;
+  padding: 0 0.12em;
+}
+
+.mantra-slot-word {
   display: inline-block;
-  min-width: 7ch;
-  text-align: left;
-  background: linear-gradient(180deg, #ffffff 0%, #ffcf70 55%, #ff6a1a 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #ffd275 55%, #ff6614 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.9));
 }
 
-.mantra-flash-in {
+.slot-word-cycle {
   animation: wordKineticSnap 0.11s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes wordKineticSnap {
   0% {
-    opacity: 0.25;
-    transform: translateY(8px) scale(0.97);
+    opacity: 0.3;
+    transform: translateY(7px) scale(0.97);
   }
   100% {
     opacity: 1;
@@ -159,64 +314,56 @@ body,
   }
 }
 
-.mantra-final-change {
-  min-width: auto;
-  text-align: center;
-  filter: drop-shadow(0 0 24px rgba(255, 145, 35, 0.65));
-  animation: finalChangeLock 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+.slot-word-locked {
+  filter: drop-shadow(0 0 24px rgba(255, 155, 40, 0.8))
+    drop-shadow(0 4px 18px rgba(0, 0, 0, 0.95));
+  animation: finalChangeLock 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes finalChangeLock {
   0% {
     transform: scale(1.14);
-    filter: drop-shadow(0 0 40px rgba(255, 210, 110, 0.95));
+    filter: drop-shadow(0 0 38px rgba(255, 215, 115, 0.95));
   }
   100% {
     transform: scale(1);
-    filter: drop-shadow(0 0 22px rgba(255, 145, 35, 0.55));
+    filter: drop-shadow(0 0 22px rgba(255, 155, 40, 0.7));
   }
 }
 
-.preloader-progress-wrap {
-  position: absolute;
-  bottom: 7vh;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.65rem;
-  transition: opacity 0.45s ease;
-}
-
-.preloader-progress-wrap.progress-done {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.preloader-progress-track {
-  width: clamp(180px, 24vw, 300px);
-  height: 2px;
-  background: rgba(255, 185, 110, 0.16);
+.mantra-underscore-track {
+  position: relative;
+  width: 100%;
+  height: 3px;
+  margin-top: 0.16em;
+  background: rgba(255, 175, 95, 0.25);
   overflow: hidden;
 }
 
-.preloader-progress-fill {
+.mantra-underscore-fill {
+  display: block;
   height: 100%;
-  background: linear-gradient(90deg, #ff5500, #ffd275);
-  box-shadow: 0 0 12px #ff8811;
+  background: linear-gradient(90deg, #ff5500, #ffd875, #ffffff);
+  box-shadow: 0 0 14px rgba(255, 165, 50, 0.9);
   transition: width 0.1s linear;
 }
 
-.preloader-percent {
+.preloader-status-sub {
+  margin-top: 2.6vh;
   font-family: 'Frontage Regular', sans-serif;
-  font-size: 0.56rem;
-  letter-spacing: 0.32em;
-  text-indent: 0.32em;
-  color: rgba(255, 195, 125, 0.65);
+  font-size: clamp(0.52rem, 0.85vw, 0.68rem);
+  letter-spacing: 0.34em;
+  text-indent: 0.34em;
+  color: rgba(255, 190, 120, 0.65);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.95);
+  transition: color 0.35s ease;
 }
 
-/* --- STICKY SCROLL RUNWAY (Connects directly to the next component in App.jsx) --- */
+.preloader-status-sub.status-ready {
+  color: rgba(255, 225, 175, 0.94);
+}
+
+/* --- STICKY SCROLL RUNWAY --- */
 .hero-section-root {
   width: 100%;
   background-color: #050101;
@@ -225,7 +372,7 @@ body,
 .hero-scroll-runway {
   position: relative;
   width: 100%;
-  height: 185vh; /* Smooth parallax distance with zero dead gap before the next section */
+  height: 185vh;
   margin: 0;
   padding: 0;
   background-color: #050101;
@@ -243,7 +390,6 @@ body,
   user-select: none;
 }
 
-/* Heavy Seismic Camera Impact Shake at 0.38s when Theyyam slams down */
 .hero-impact-rig {
   position: absolute;
   inset: 0;
@@ -277,7 +423,6 @@ body,
   }
 }
 
-/* 10-Second Camera Breathing Rig */
 .hero-camera-rig {
   position: absolute;
   inset: 0;
@@ -326,7 +471,6 @@ body,
   will-change: transform;
 }
 
-/* --- HEAVY SUPERHERO LANDING ENTRANCE --- */
 .superhero-land-enter {
   z-index: 4;
   mix-blend-mode: lighten;
@@ -617,7 +761,6 @@ body,
   pointer-events: auto;
 }
 
-/* Responsive scaling so all 6 Frontage letters fit comfortably on 360px+ mobile screens */
 .vidyut-main-title {
   position: relative;
   margin: 0;
@@ -1065,9 +1208,8 @@ body,
 
 /* --- MOBILE RESPONSIVE TUNING --- */
 @media (max-width: 768px) {
-  .mantra-dynamic-word {
-    min-width: auto;
-    text-align: center;
+  .mantra-underscore-slot {
+    min-width: 7ch;
   }
   .vidyut-poster-lockup {
     margin-top: 13vh;
@@ -1127,6 +1269,8 @@ body,
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .vortex-ring-group,
+  .preloader-bg-logo-wrap,
   .hero-impact-rig,
   .hero-camera-rig,
   .superhero-land-enter,
