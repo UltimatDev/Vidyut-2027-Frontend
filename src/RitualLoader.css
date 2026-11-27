@@ -1,0 +1,353 @@
+/* ============================================================================
+   OPHANIM ("EYE OF AN ANGEL") RITUAL PRELOADER
+   ============================================================================ */
+.ophanim-loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #050101;
+  user-select: none;
+  overflow: hidden;
+  touch-action: none;
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ophanim-loader-overlay.loader-ready {
+  cursor: pointer;
+}
+
+.ophanim-loader-overlay.loader-exiting {
+  opacity: 0;
+  transform: scale(1.22);
+  pointer-events: none;
+}
+
+/* Soft Warm-White / Ember Core behind the Eye */
+.ophanim-ambient-core {
+  position: absolute;
+  width: min(70vw, 560px);
+  height: min(70vw, 560px);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 240, 215, 0.14) 0%,
+    rgba(255, 115, 30, 0.08) 42%,
+    transparent 72%
+  );
+  filter: blur(36px);
+  pointer-events: none;
+  animation: coreBreathe 4s ease-in-out infinite alternate;
+}
+
+@keyframes coreBreathe {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+/* 3D Perspective Stage for the Revolving White Circular Strips */
+.ophanim-gimbal-stage {
+  position: relative;
+  width: clamp(270px, 42vw, 440px);
+  height: clamp(270px, 42vw, 440px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1000px;
+  transform-style: preserve-3d;
+}
+
+.ophanim-ring-plane {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  pointer-events: none;
+}
+
+.ophanim-strip-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* White Circular Strip Styling */
+.strip-hairline {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.24);
+  stroke-width: 0.9;
+}
+
+.strip-arc-bright {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.88);
+  stroke-width: 2.2;
+  stroke-dasharray: 220 140 90 180;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.65));
+}
+
+.strip-arc-medium {
+  fill: none;
+  stroke: rgba(255, 245, 230, 0.62);
+  stroke-width: 1.6;
+  stroke-dasharray: 160 110 60 140;
+  stroke-linecap: round;
+}
+
+.strip-ticks {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.45);
+  stroke-width: 3;
+  stroke-dasharray: 2 14;
+}
+
+.strip-ticks-fine {
+  fill: none;
+  stroke: rgba(255, 225, 175, 0.5);
+  stroke-width: 2;
+  stroke-dasharray: 1 9;
+}
+
+/* Intersecting Orbital Planes (Ophanim Gimbal Motion) */
+.plane-1 {
+  animation: gimbalOrbitOne 14s linear infinite;
+}
+
+.plane-2 {
+  animation: gimbalOrbitTwo 11s linear infinite;
+}
+
+.plane-3 {
+  animation: gimbalOrbitThree 17s linear infinite;
+}
+
+@keyframes gimbalOrbitOne {
+  0% {
+    transform: rotateX(64deg) rotateY(-24deg) rotateZ(0deg);
+  }
+  50% {
+    transform: rotateX(58deg) rotateY(24deg) rotateZ(180deg);
+  }
+  100% {
+    transform: rotateX(64deg) rotateY(-24deg) rotateZ(360deg);
+  }
+}
+
+@keyframes gimbalOrbitTwo {
+  0% {
+    transform: rotateX(-62deg) rotateY(28deg) rotateZ(360deg);
+  }
+  50% {
+    transform: rotateX(-54deg) rotateY(-28deg) rotateZ(180deg);
+  }
+  100% {
+    transform: rotateX(-62deg) rotateY(28deg) rotateZ(0deg);
+  }
+}
+
+@keyframes gimbalOrbitThree {
+  0% {
+    transform: rotateX(74deg) rotateY(8deg) rotateZ(0deg);
+  }
+  50% {
+    transform: rotateX(68deg) rotateY(-8deg) rotateZ(180deg);
+  }
+  100% {
+    transform: rotateX(74deg) rotateY(8deg) rotateZ(360deg);
+  }
+}
+
+/* Glowing Central Eye Pupil with Vidyut Logo */
+.ophanim-eye-pupil {
+  position: relative;
+  z-index: 3;
+  width: 38%;
+  height: 38%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eye-halo-pulse {
+  position: absolute;
+  inset: -18%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.42) 0%,
+    rgba(255, 195, 110, 0.2) 45%,
+    transparent 72%
+  );
+  filter: blur(14px);
+  animation: eyeGlowPulse 2.8s ease-in-out infinite alternate;
+}
+
+@keyframes eyeGlowPulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+.ophanim-center-logo {
+  position: relative;
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+  filter: brightness(1.15)
+    drop-shadow(0 0 18px rgba(255, 255, 255, 0.8))
+    drop-shadow(0 0 36px rgba(255, 165, 65, 0.55));
+  animation: logoFloat 3.6s ease-in-out infinite alternate;
+}
+
+.ophanim-fallback-crest {
+  position: relative;
+  width: 92%;
+  height: 92%;
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.85))
+    drop-shadow(0 0 32px rgba(255, 165, 65, 0.5));
+  animation: logoFloat 3.6s ease-in-out infinite alternate;
+}
+
+@keyframes logoFloat {
+  0% {
+    transform: translateY(-3px) scale(0.98);
+  }
+  100% {
+    transform: translateY(3px) scale(1.03);
+  }
+}
+
+/* Status & Click-to-Enter Prompt Below the Eye */
+.ophanim-status-block {
+  position: relative;
+  z-index: 4;
+  margin-top: 3.5vh;
+  min-height: 68px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 6vw;
+}
+
+.ophanim-awakening-text {
+  margin: 0 0 0.85rem 0;
+  font-family: 'Frontage Regular', sans-serif;
+  font-size: clamp(0.68rem, 1.15vw, 0.92rem);
+  letter-spacing: 0.36em;
+  text-indent: 0.36em;
+  color: rgba(255, 245, 232, 0.85);
+  animation: phraseFade 1.1s ease-in-out infinite;
+}
+
+@keyframes phraseFade {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.ophanim-progress-bar {
+  width: clamp(160px, 22vw, 260px);
+  height: 1.5px;
+  background: rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+}
+
+.ophanim-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.4), #ffffff);
+  box-shadow: 0 0 10px #ffffff;
+  transition: width 0.08s linear;
+}
+
+.ophanim-progress-num {
+  margin-top: 0.55rem;
+  font-family: 'Frontage Regular', sans-serif;
+  font-size: 0.56rem;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em;
+  color: rgba(255, 235, 205, 0.6);
+}
+
+/* Unlocked "CLICK TO ENTER" Callout */
+.ophanim-enter-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  animation: enterPromptReveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes enterPromptReveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.enter-kicker {
+  font-family: 'Frontage Regular', sans-serif;
+  font-size: 0.56rem;
+  letter-spacing: 0.38em;
+  text-indent: 0.38em;
+  color: rgba(255, 205, 130, 0.8);
+}
+
+.enter-cta {
+  font-family: 'Frontage Bold', sans-serif;
+  font-size: clamp(0.95rem, 1.7vw, 1.35rem);
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
+  color: #ffffff;
+  text-shadow: 0 0 18px rgba(255, 255, 255, 0.85),
+    0 0 34px rgba(255, 155, 45, 0.6);
+  animation: ctaPulse 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes ctaPulse {
+  0% {
+    opacity: 0.72;
+    letter-spacing: 0.3em;
+  }
+  100% {
+    opacity: 1;
+    letter-spacing: 0.36em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ophanim-ambient-core,
+  .ophanim-ring-plane,
+  .eye-halo-pulse,
+  .ophanim-center-logo,
+  .ophanim-fallback-crest,
+  .ophanim-awakening-text,
+  .enter-cta {
+    animation: none !important;
+  }
+}

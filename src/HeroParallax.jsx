@@ -6,73 +6,11 @@ import mountainTheyyamImg from './assets/MOUNTAIN with theyam.png';
 import theyyamCharacterImg from './assets/web.png';
 
 // ============================================================================
-// EASY AUDIO & LOGO SWAP:
-// Drop your .mp3/.wav or logo .png/.svg in src/assets/ and import them here:
+// EASY AUDIO SWAP:
+// Drop your .mp3/.wav in src/assets/ and import it here:
 import customImpactAudio from './assets/slam.mp3';
-import customVidyutLogo from './logo.png';
 // ============================================================================
 //const customImpactAudio = null;
-//const customVidyutLogo = null;
-
-const LOADER_WORDS = [
-  'FLAME',
-  'BRIGHT',
-  'SPARK',
-  'ROAR',
-  'FURY',
-  'PULSE',
-  'RISE',
-  'LIGHT',
-  'POWER',
-  'SPIRIT',
-  'THUNDER',
-  'CHANGE',
-];
-
-const TUNNEL_RINGS = [
-  {
-    id: 'r1',
-    radius: 112,
-    text: 'VIDYUT • '.repeat(8),
-    fontSize: 16,
-    className: 'ring-cw-fast',
-  },
-  {
-    id: 'r2',
-    radius: 168,
-    text: 'VIDYUT • '.repeat(10),
-    fontSize: 21,
-    className: 'ring-ccw-med',
-  },
-  {
-    id: 'r3',
-    radius: 232,
-    text: 'VIDYUT • '.repeat(12),
-    fontSize: 27,
-    className: 'ring-cw-slow',
-  },
-  {
-    id: 'r4',
-    radius: 304,
-    text: 'VIDYUT • '.repeat(13),
-    fontSize: 33,
-    className: 'ring-ccw-slow',
-  },
-  {
-    id: 'r5',
-    radius: 384,
-    text: 'VIDYUT • '.repeat(14),
-    fontSize: 40,
-    className: 'ring-cw-med',
-  },
-  {
-    id: 'r6',
-    radius: 472,
-    text: 'VIDYUT • '.repeat(15),
-    fontSize: 47,
-    className: 'ring-ccw-fast',
-  },
-];
 
 const SUBTITLE_DEFAULT = 'NATIONAL LEVEL MULTIFEST';
 const SUBTITLE_HOVER = 'BE THE CHANGE';
@@ -244,18 +182,12 @@ const PACKED_ORBIT_PHRASE =
   'JAN 22 • 23 • 24 • JAN 22 • 23 • 24 • JAN 22 • 23 • 24 • JAN 22 • 23 • 24 • ';
 
 const HeroParallax = ({
+  isActive = true, // Controlled by RitualLoader via App.jsx
+  onReady,         // Fires once all Hero assets are GPU-decoded & painted on screen
   targetTimestamp = getTargetDate(),
   impactSound = customImpactAudio,
   impactVolume = 0.9,
-  logoSrc = customVidyutLogo,
 }) => {
-  const [wordIndex, setWordIndex] = useState(0);
-  const [loadProgress, setLoadProgress] = useState(0);
-  const [isLogoReady, setIsLogoReady] = useState(!logoSrc);
-  const [isReadyToEnter, setIsReadyToEnter] = useState(false);
-  const [isExitingLoader, setIsExitingLoader] = useState(false);
-  const [hasEntered, setHasEntered] = useState(false);
-
   const [isCharacterHovered, setIsCharacterHovered] = useState(false);
   const isCharacterHoveredRef = useRef(false);
 
@@ -300,6 +232,7 @@ const HeroParallax = ({
 
   const audioRef = useRef(null);
   const audioCtxRef = useRef(null);
+  const hasTriggeredEntranceRef = useRef(false);
 
   const [timeLeft, setTimeLeft] = useState({
     days: '00',
@@ -308,117 +241,11 @@ const HeroParallax = ({
     seconds: '00',
   });
 
-  // 0. Always Reset Scroll to Top on Refresh & Strictly Lock Scroll Until Entered
+  // 1. Preload & GPU-Decode All Hero Textures & Fonts, Then Signal `onReady()`
   useEffect(() => {
-    if ('scrollRestoration' in window.history) {
-      window.history.scrollRestoration = 'manual';
-    }
-    window.scrollTo(0, 0);
-
-    const handleBeforeUnload = () => {
-      window.scrollTo(0, 0);
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, []);
-
-  useEffect(() => {
-    const html = document.documentElement;
-    const body = document.body;
-
-    if (!hasEntered) {
-      window.scrollTo(0, 0);
-      html.style.overflow = 'hidden';
-      body.style.overflow = 'hidden';
-      body.style.position = 'fixed';
-      body.style.top = '0';
-      body.style.left = '0';
-      body.style.width = '100%';
-      body.style.height = '100%';
-
-      const preventScrollEvent = (e) => {
-        e.preventDefault();
-      };
-      const preventScrollKeys = (e) => {
-        const scrollKeys = ['ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' '];
-        if (scrollKeys.includes(e.key) && !isReadyToEnter) {
-          e.preventDefault();
-        }
-      };
-
-      window.addEventListener('wheel', preventScrollEvent, { passive: false });
-      window.addEventListener('touchmove', preventScrollEvent, { passive: false });
-      window.addEventListener('keydown', preventScrollKeys);
-
-      return () => {
-        window.removeEventListener('wheel', preventScrollEvent);
-        window.removeEventListener('touchmove', preventScrollEvent);
-        window.removeEventListener('keydown', preventScrollKeys);
-      };
-    } else {
-      html.style.overflow = '';
-      body.style.overflow = '';
-      body.style.position = '';
-      body.style.top = '';
-      body.style.left = '';
-      body.style.width = '';
-      body.style.height = '';
-      window.scrollTo(0, 0);
-    }
-  }, [hasEntered, isReadyToEnter]);
-
-  // 1A. High-Priority Logo Decode First so Loader Visuals Never Pop In Late
-  useEffect(() => {
-    if (!logoSrc) {
-      setIsLogoReady(true);
-      return;
-    }
-
     let cancelled = false;
-    const preloadLink = document.createElement('link');
-    preloadLink.rel = 'preload';
-    preloadLink.as = 'image';
-    preloadLink.href = logoSrc;
-    document.head.appendChild(preloadLink);
 
-    const decodeLogo = async () => {
-      const img = new Image();
-      img.src = logoSrc;
-      try {
-        if (img.decode) {
-          await img.decode();
-        } else {
-          await new Promise((res) => {
-            img.onload = res;
-            img.onerror = res;
-          });
-        }
-      } catch {
-        // Proceed gracefully
-      }
-      if (!cancelled) {
-        setIsLogoReady(true);
-      }
-    };
-
-    decodeLogo();
-
-    return () => {
-      cancelled = true;
-      if (preloadLink.parentNode) {
-        preloadLink.parentNode.removeChild(preloadLink);
-      }
-    };
-  }, [logoSrc]);
-
-  // 1B. GPU Image Decode + Font Ready + Kinetic "BE THE ______" Loader
-  useEffect(() => {
-    if (!isLogoReady) return;
-
-    let isCancelled = false;
-    let assetsDecoded = false;
-
-    const preloadAndDecodeAll = async () => {
+    const prepareScene = async () => {
       const imageSources = [skyImg, mountainTheyyamImg, theyyamCharacterImg];
 
       const imagePromises = imageSources.map(async (src) => {
@@ -434,7 +261,7 @@ const HeroParallax = ({
             });
           }
         } catch {
-          // Proceed gracefully
+          // Continue gracefully
         }
       });
 
@@ -454,42 +281,28 @@ const HeroParallax = ({
       }
 
       await Promise.all([...imagePromises, fontPromise, audioPromise]);
-      if (!isCancelled) {
-        assetsDecoded = true;
-      }
+
+      // Wait two animation frames to confirm DOM layers are painted on screen
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (!cancelled && onReady) {
+            onReady();
+          }
+        });
+      });
     };
 
-    preloadAndDecodeAll();
-
-    let tickCount = 0;
-    const minTicks = 18;
-    const interval = setInterval(() => {
-      if (isCancelled) return;
-      tickCount += 1;
-
-      if (!assetsDecoded || tickCount < minTicks) {
-        const rawPct = assetsDecoded
-          ? Math.round((tickCount / minTicks) * 100)
-          : Math.min(94, Math.round((tickCount / (minTicks + 8)) * 94));
-        setLoadProgress(rawPct);
-        setWordIndex(tickCount % (LOADER_WORDS.length - 1));
-      } else {
-        setLoadProgress(100);
-        setWordIndex(LOADER_WORDS.length - 1);
-        setIsReadyToEnter(true);
-        clearInterval(interval);
-      }
-    }, 105);
+    prepareScene();
 
     return () => {
-      isCancelled = true;
-      clearInterval(interval);
+      cancelled = true;
     };
-  }, [isLogoReady, impactSound, impactVolume]);
+  }, [impactSound, impactVolume, onReady]);
 
-  // Handle Click on "CLICK TO / BE THE CHANGE"
-  const handleStartWebsite = () => {
-    if (!isReadyToEnter || isExitingLoader || hasEntered) return;
+  // 2. Trigger Superhero Drop + Synchronized Ground-Slam Audio when `isActive` turns true
+  useEffect(() => {
+    if (!isActive || hasTriggeredEntranceRef.current) return;
+    hasTriggeredEntranceRef.current = true;
 
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -513,10 +326,7 @@ const HeroParallax = ({
         .catch(() => {});
     }
 
-    setIsExitingLoader(true);
-    setHasEntered(true);
-
-    setTimeout(() => {
+    const impactTimer = setTimeout(() => {
       shockwaveBurstRef.current = true;
 
       if (typeof navigator !== 'undefined' && navigator.vibrate) {
@@ -530,7 +340,9 @@ const HeroParallax = ({
         playSynthesizedGroundSlam(audioCtxRef.current);
       }
     }, 380);
-  };
+
+    return () => clearTimeout(impactTimer);
+  }, [isActive]);
 
   // Character Hover / Touch Handlers
   const handleCharacterMouseEnter = useCallback(() => {
@@ -589,7 +401,7 @@ const HeroParallax = ({
 
   // Main 60fps Engine
   useEffect(() => {
-    if (!hasEntered) return;
+    if (!isActive) return;
 
     const handleScroll = () => {
       if (!runwayRef.current) return;
@@ -820,11 +632,11 @@ const HeroParallax = ({
       cancelAnimationFrame(rafId);
       window.removeEventListener('scroll', handleScroll);
     };
-  }, [hasEntered, ribbonChars]);
+  }, [isActive, ribbonChars]);
 
   // Procedural Fire Plumes + Shockwave Embers + Figure-Edge Hover Ember Burst
   useEffect(() => {
-    if (!hasEntered) return;
+    if (!isActive) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -998,7 +810,7 @@ const HeroParallax = ({
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', setCanvasSize);
     };
-  }, [hasEntered]);
+  }, [isActive]);
 
   const handleDockMouseMove = (e) => {
     const el = dockRef.current;
@@ -1010,143 +822,6 @@ const HeroParallax = ({
 
   return (
     <div className="hero-section-root">
-      {/* --- RAGAM-INSPIRED VIDYUT VORTEX + PROMINENT EMBLEM WATERMARK + UNDERSCORE LOADER --- */}
-      {!hasEntered && (
-        <div
-          className={`ritual-preloader-screen ${isReadyToEnter ? 'preloader-ready' : ''} ${
-            isExitingLoader ? 'preloader-exiting' : ''
-          }`}
-          onClick={handleStartWebsite}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') handleStartWebsite();
-          }}
-        >
-          {/* Full-360° Nested Concentric VIDYUT Typography Vortex */}
-          <div className="ragam-vortex-layer" aria-hidden="true">
-            <svg
-              className="ragam-vortex-svg"
-              viewBox="0 0 1000 1000"
-              preserveAspectRatio="xMidYMid slice"
-            >
-              <defs>
-                {TUNNEL_RINGS.map((ring) => (
-                  <path
-                    key={ring.id}
-                    id={`vortex-${ring.id}`}
-                    d={`M 500, 500 m -${ring.radius}, 0 a ${ring.radius},${ring.radius} 0 1,1 ${
-                      ring.radius * 2
-                    },0 a ${ring.radius},${ring.radius} 0 1,1 -${ring.radius * 2},0`}
-                  />
-                ))}
-              </defs>
-
-              {TUNNEL_RINGS.map((ring) => (
-                <g key={ring.id} className={`vortex-ring-group ${ring.className}`}>
-                  <text
-                    className="vortex-ring-text"
-                    style={{ fontSize: `${ring.fontSize}px` }}
-                    textLength={Math.round(2 * Math.PI * ring.radius)}
-                    lengthAdjust="spacing"
-                  >
-                    <textPath href={`#vortex-${ring.id}`} startOffset="0%">
-                      {ring.text}
-                    </textPath>
-                  </text>
-                </g>
-              ))}
-            </svg>
-          </div>
-
-          {/* Radial Center Vignette (Sits behind the logo so the logo stays bright and visible) */}
-          <div className="vortex-center-vignette" />
-
-          {/* Prominent Background Emblem / Logo Watermark (z-index: 2, decoded before reveal) */}
-          {isLogoReady && (
-            <div className="preloader-bg-logo-wrap" aria-hidden="true">
-              <div className="preloader-logo-backglow" />
-              {logoSrc ? (
-                <img
-                  src={logoSrc}
-                  alt=""
-                  className="preloader-custom-logo"
-                  decoding="sync"
-                  fetchPriority="high"
-                />
-              ) : (
-                <svg className="preloader-crest-svg" viewBox="0 0 240 240" fill="none">
-                  <circle
-                    cx="120"
-                    cy="120"
-                    r="96"
-                    stroke="rgba(255, 130, 35, 0.48)"
-                    strokeWidth="1.5"
-                    strokeDasharray="6 6"
-                  />
-                  <circle
-                    cx="120"
-                    cy="120"
-                    r="76"
-                    stroke="rgba(255, 195, 90, 0.35)"
-                    strokeWidth="1.2"
-                  />
-                  <path
-                    d="M120 26 L138 78 L188 64 L154 108 L196 136 L146 144 L158 196 L120 160 L82 196 L94 144 L44 136 L86 108 L52 64 L102 78 Z"
-                    stroke="rgba(255, 145, 45, 0.55)"
-                    strokeWidth="1.8"
-                    fill="rgba(235, 55, 12, 0.16)"
-                  />
-                  <path
-                    d="M120 48 L134 115 L120 186 L106 115 Z"
-                    fill="rgba(255, 185, 80, 0.42)"
-                  />
-                </svg>
-              )}
-            </div>
-          )}
-
-          {/* Center Lockup: CLICK TO / BE THE [________] */}
-          <div className="preloader-center-stack">
-            <span
-              className={`preloader-click-cue ${
-                isReadyToEnter ? 'cue-visible' : 'cue-hidden'
-              }`}
-            >
-              CLICK TO
-            </span>
-
-            <div className="preloader-mantra-line">
-              <span className="mantra-prefix">BE THE</span>
-              <span className="mantra-underscore-slot">
-                <span
-                  key={wordIndex}
-                  className={`mantra-slot-word ${
-                    isReadyToEnter ? 'slot-word-locked' : 'slot-word-cycle'
-                  }`}
-                >
-                  {LOADER_WORDS[wordIndex]}
-                </span>
-                <span className="mantra-underscore-track">
-                  <span
-                    className="mantra-underscore-fill"
-                    style={{ width: `${loadProgress}%` }}
-                  />
-                </span>
-              </span>
-            </div>
-
-            <span
-              className={`preloader-status-sub ${
-                isReadyToEnter ? 'status-ready' : ''
-              }`}
-            >
-              {isReadyToEnter ? 'SYSTEMS PRIMED • TAP ANYWHERE' : `AWAKENING ${loadProgress}%`}
-            </span>
-          </div>
-        </div>
-      )}
-
       {/* SVG Filters */}
       <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
         <defs>
@@ -1203,7 +878,7 @@ const HeroParallax = ({
       {/* --- MAIN HERO PARALLAX RUNWAY --- */}
       <section className="hero-scroll-runway" ref={runwayRef}>
         <div className="hero-sticky-viewport">
-          {hasEntered && (
+          {isActive && (
             <div className="hero-impact-rig">
               <div className="hero-camera-rig">
                 {/* Layer 1: Red Sun & Sky */}
