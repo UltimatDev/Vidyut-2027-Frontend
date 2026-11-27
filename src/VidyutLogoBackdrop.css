@@ -1,0 +1,102 @@
+/* VidyutLogoBackdrop.css - Visible Continuous 2.5D Emblem Layer */
+
+.vidyut-fixed-logo-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 3;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: transparent;
+}
+.vidyut-logo-embers-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.vidyut-logo-scale-rig {
+  position: relative;
+  width: min(68vmin, 620px);
+  height: min(68vmin, 620px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform, opacity;
+  z-index: 2;
+}
+
+.vidyut-logo-25d-rig {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.18s ease-out;
+  animation: vidyutEmblemBreathe 8s infinite alternate ease-in-out;
+}
+
+.vidyut-logo-plane {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.16s ease-out;
+  will-change: transform, opacity;
+}
+
+.vidyut-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+/* Replace .layer-glow, .layer-outline, .vidyut-logo-light-sweep, and .layer-fill */
+.layer-glow .vidyut-logo-img {
+  filter: blur(12px) sepia(0.8) saturate(3) hue-rotate(-15deg) brightness(1.1);
+}
+
+.layer-outline .vidyut-logo-img {
+  filter: contrast(1.15) brightness(1.15);
+}
+
+.vidyut-logo-light-sweep {
+  display: none; /* Removes the unmasked rectangular sheen box */
+}
+
+.layer-fill .vidyut-logo-img {
+  filter: sepia(0.35) saturate(1.8) brightness(1.05);
+}
+@keyframes vidyutEmblemBreathe {
+  0% {
+    transform: scale(0.985) rotate(-1.5deg);
+  }
+  100% {
+    transform: scale(1.025) rotate(1.5deg);
+  }
+}
+
+@keyframes vidyutLogoSweep {
+  0% {
+    transform: translateX(-65%) translateY(-20%);
+  }
+  50%, 100% {
+    transform: translateX(65%) translateY(20%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vidyut-logo-25d-rig,
+  .vidyut-logo-light-sweep {
+    animation: none;
+  }
+}

@@ -1,272 +1,235 @@
-/* ThemeSection.css - Editorial Torchlight & Frontage Cinema Composition */
+/* ThemeSection.css - Cinzel Display + Manrope Body, Highlighted "BE THE CHANGE" */
 
-@font-face {
-  font-family: 'Frontage';
-  src: local('Frontage'), local('Frontage-Regular'), local('Frontage Bold'), local('Frontage-Bold');
-  font-display: swap;
-}
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Manrope:wght@500;600&display=swap');
 
-.btc-cinema-section {
+.btc-pinned-section {
   position: relative;
   width: 100%;
-  min-height: clamp(540px, 78vh, 860px);
-  margin-top: -2px;
-  background-color: #030303;
+  height: 100vh;
+  /* Sits above VidyutLogoBackdrop (z-index: 3) so text is crisp over the emblem */
+  z-index: 4;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
-  padding: clamp(4rem, 9vh, 6.5rem) clamp(1.25rem, 4vw, 3rem) clamp(3.5rem, 8vh, 5.5rem);
+  justify-content: center;
   overflow: hidden;
+  padding: 0 clamp(1.25rem, 5vw, 3.5rem);
   box-sizing: border-box;
-  user-select: none;
+  background: transparent;
 }
 
-/* Seamless integration with HeroParallax */
-.btc-top-seam {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 110px;
-  background: linear-gradient(to bottom, #060203 0%, transparent 100%);
-  z-index: 4;
-  pointer-events: none;
-}
-
-.btc-bottom-seam {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 90px;
-  background: linear-gradient(to top, #000000 0%, transparent 100%);
-  z-index: 4;
-  pointer-events: none;
-}
-
-/* Procedural Canvas Layer */
-.btc-atmosphere-canvas {
+/* Transparent at the outer edges so scrolling in never slices the fixed logo */
+.btc-radial-vignette {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 2;
   pointer-events: none;
-}
-
-/* Atmospheric Depth & Distant Crowd/Torch Bokeh Orbs (CSS-only, zero image files) */
-.btc-relief-backdrop {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse 46% 52% at 48% 42%, rgba(58, 52, 46, 0.28) 0%, rgba(16, 14, 13, 0.75) 55%, #020202 88%);
-}
-
-/* Raised Torch/Arm Silhouette Beam echoing the reference composition */
-.btc-monolith-beam {
-  position: absolute;
-  top: -5%;
-  left: 31%;
-  width: clamp(70px, 9vw, 135px);
-  height: 68%;
-  background: linear-gradient(
-    to right,
-    rgba(255, 220, 175, 0.09) 0%,
-    rgba(30, 26, 23, 0.45) 35%,
-    rgba(8, 7, 7, 0.85) 100%
+  background: radial-gradient(
+    ellipse 55% 45% at 50% 50%,
+    rgba(5, 1, 1, 0.58) 0%,
+    rgba(5, 1, 1, 0.22) 55%,
+    transparent 80%
   );
-  transform: rotate(-4deg);
-  filter: blur(6px);
-  opacity: 0.75;
+  z-index: 1;
 }
 
-/* Distant Warm Torch Bokeh Circles on Right */
-.btc-bokeh-orbs {
-  position: absolute;
-  inset: 0;
-}
-
-.btc-orb {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 215, 165, 0.22) 0%, rgba(180, 120, 70, 0.05) 60%, transparent 100%);
-  filter: blur(8px);
-  animation: btcOrbPulse 6s infinite alternate ease-in-out;
-}
-
-.orb-1 { width: 90px; height: 90px; top: 34%; right: 27%; animation-delay: 0s; }
-.orb-2 { width: 55px; height: 55px; top: 48%; right: 21%; animation-delay: 1.5s; }
-.orb-3 { width: 120px; height: 120px; top: 24%; right: 16%; opacity: 0.5; animation-delay: 2.8s; }
-.orb-4 { width: 45px; height: 45px; top: 56%; right: 31%; animation-delay: 0.9s; }
-
-/* Heavy Cinema Vignette (Pure black perimeter like reference image) */
-.btc-cinema-vignette {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  background:
-    radial-gradient(
-      ellipse 68% 62% at 50% 48%,
-      transparent 35%,
-      rgba(0, 0, 0, 0.72) 72%,
-      #000000 96%
-    );
-}
-
-/* Foreground Typographic Lockup */
-.btc-stage-content {
+.btc-pinned-stage {
   position: relative;
-  z-index: 5;
+  z-index: 3;
   width: 100%;
-  max-width: 1180px;
+  max-width: 1240px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
 }
 
-.btc-editorial-headline {
-  font-family: 'Frontage', sans-serif;
-  font-size: clamp(2.1rem, 6.2vw, 5.4rem);
-  line-height: 1.08;
-  letter-spacing: 0.06em;
+/* Wide Letter-Spaced Outlined "2027" Behind the Heading */
+.btc-year-outline {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -52%);
+  font-family: 'Cinzel', serif;
+  font-weight: 900;
+  font-size: clamp(6.5rem, 23vw, 20rem);
+  line-height: 1;
+  letter-spacing: 0.18em;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(255, 194, 112, 0.22);
+  user-select: none;
+  pointer-events: none;
+  z-index: 1;
+  white-space: nowrap;
+}
+
+/* Foreground Heading Block */
+.btc-headline-block {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.btc-eyebrow {
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  font-size: clamp(0.74rem, 1.15vw, 0.9rem);
+  letter-spacing: 0.38em;
+  text-transform: uppercase;
+  color: rgba(255, 208, 145, 0.88);
+  margin-bottom: clamp(0.85rem, 2vh, 1.35rem);
+}
+
+.btc-main-heading {
+  font-family: 'Cinzel', serif;
+  font-weight: 800;
+  font-size: clamp(2.4rem, 7.2vw, 6.4rem);
+  line-height: 1.25;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   margin: 0;
+  padding: 0.15em 0;
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   align-items: baseline;
-  gap: 0.35em;
+  justify-content: center;
+  gap: 0.34em;
 }
 
-.btc-word-group {
-  display: inline-flex;
-  flex-wrap: nowrap;
-}
-
-/* First half ("BE THE"): Crisp, high-contrast Frontage lit from below-left by torchlight */
-.btc-solid-group .btc-glyph {
+/* "BE THE" — Clean Warm Ivory/Gold Gradient */
+.btc-fixed-phrase {
+  display: inline-block;
   background: linear-gradient(
-    165deg,
+    180deg,
     #ffffff 0%,
-    #f3ece1 48%,
-    #cbbba4 88%,
-    #8c7a65 100%
+    #f5e4c8 58%,
+    #d6b382 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.95))
-          drop-shadow(0 0 24px rgba(255, 165, 70, 0.18));
+  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.85));
 }
 
-/* Second half ("CHANGE"): Angled dramatic Frontage with molten ember edge */
-.btc-italic-group {
-  transform: skewX(-9deg);
+/* Highlighted "CHANGE" — Focal Hero Word of the Theme */
+.btc-highlight-wrap {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.05em 0.18em;
 }
 
-.btc-italic-group .btc-glyph {
+.btc-highlight-word {
+  position: relative;
+  display: inline-block;
+  font-weight: 900;
+  font-style: normal;
+  transform: skewX(-12deg);
   background: linear-gradient(
     175deg,
-    #e8dfd5 0%,
-    #b5a898 52%,
-    #786c5e 100%
+    #fffdf7 0%,
+    #ffd782 38%,
+    #ff8b26 78%,
+    #ff4d00 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.95));
+  filter:
+    drop-shadow(0 2px 10px rgba(255, 175, 65, 0.45))
+    drop-shadow(0 8px 28px rgba(255, 85, 0, 0.38));
 }
 
-/* Staggered Scroll Entrance */
-.btc-glyph {
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(28px);
-  transition:
-    opacity 0.75s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
-  transition-delay: calc(var(--idx) * 45ms + 120ms);
+/* Subtle Ember Accent Bar Anchoring "CHANGE" */
+.btc-highlight-underline {
+  width: 92%;
+  height: 2px;
+  margin-top: 0.08em;
+  transform: skewX(-12deg);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    #ff9e38 25%,
+    #fff1cc 50%,
+    #ff6a1a 75%,
+    transparent 100%
+  );
+  box-shadow: 0 0 14px rgba(255, 130, 35, 0.75);
 }
 
-.btc-cinema-section.is-visible .btc-glyph {
-  opacity: 1;
-  transform: translateY(0);
+/* Button-Styled CTA with Arrow Motion on Hover */
+.btc-cta-wrapper {
+  position: relative;
+  z-index: 3;
+  margin-top: clamp(1.85rem, 4.2vh, 2.85rem);
 }
 
-/* Minimalist Underlined Link Action (Matches "Learn more about the legacy ↗") */
-.btc-legacy-cta {
-  margin-top: clamp(1rem, 2.2vh, 1.65rem);
+.btc-vision-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.45em;
-  font-family: 'Frontage', sans-serif;
-  font-size: clamp(0.72rem, 1.15vw, 0.92rem);
-  letter-spacing: 0.18em;
+  gap: 0.75rem;
+  padding: 0.92rem 1.9rem;
+  font-family: 'Manrope', sans-serif;
+  font-weight: 600;
+  font-size: clamp(0.82rem, 1.15vw, 0.96rem);
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(218, 208, 194, 0.78);
+  color: #fff6e8;
   text-decoration: none;
-  padding-bottom: 0.35em;
-  border-bottom: 1px solid rgba(218, 208, 194, 0.42);
-  opacity: 0;
-  transform: translateY(14px);
+  background: rgba(255, 148, 46, 0.12);
+  border: 1px solid rgba(255, 185, 105, 0.48);
+  border-radius: 999px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   transition:
-    opacity 0.8s ease 0.65s,
-    transform 0.8s ease 0.65s,
-    color 0.25s ease,
-    border-color 0.25s ease;
+    background-color 0.28s ease,
+    border-color 0.28s ease,
+    transform 0.28s ease,
+    box-shadow 0.28s ease;
 }
 
-.btc-cinema-section.is-visible .btc-legacy-cta {
-  opacity: 1;
-  transform: translateY(0);
+.btc-vision-btn:hover {
+  background: rgba(255, 132, 36, 0.24);
+  border-color: #ffbe6b;
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(255, 107, 26, 0.26);
 }
 
-.btc-legacy-cta:hover {
+.btc-btn-arrow {
+  display: inline-block;
+  font-size: 1.15em;
+  line-height: 1;
   color: #ffbe6b;
-  border-bottom-color: #ffbe6b;
+  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.btc-cta-arrow {
-  font-family: sans-serif;
-  font-size: 1.05em;
-  transition: transform 0.25s ease;
-}
-
-.btc-legacy-cta:hover .btc-cta-arrow {
-  transform: translate(2px, -2px);
-}
-
-@keyframes btcOrbPulse {
-  0% { opacity: 0.35; transform: scale(0.95); }
-  100% { opacity: 0.75; transform: scale(1.06); }
+.btc-vision-btn:hover .btc-btn-arrow {
+  transform: translateX(6px);
 }
 
 @media (max-width: 768px) {
-  .btc-cinema-section {
-    min-height: 62vh;
-    padding-bottom: 3rem;
-  }
-
-  .btc-editorial-headline {
-    font-size: clamp(1.9rem, 9.2vw, 3.2rem);
+  .btc-main-heading {
     flex-direction: column;
     align-items: center;
-    gap: 0.12em;
+    gap: 0.05em;
+    font-size: clamp(2.4rem, 11.5vw, 3.8rem);
+  }
+
+  .btc-year-outline {
+    font-size: clamp(5.5rem, 28vw, 10rem);
+    letter-spacing: 0.12em;
+  }
+
+  .btc-vision-btn {
+    padding: 0.82rem 1.5rem;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .btc-glyph,
-  .btc-legacy-cta,
-  .btc-orb {
+  .btc-vision-btn,
+  .btc-btn-arrow {
     transition: none;
-    animation: none;
-    opacity: 1;
-    transform: none;
   }
 }

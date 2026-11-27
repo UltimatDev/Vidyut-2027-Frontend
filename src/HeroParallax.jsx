@@ -182,8 +182,8 @@ const PACKED_ORBIT_PHRASE =
   'JAN 22 • 23 • 24 • JAN 22 • 23 • 24 • JAN 22 • 23 • 24 • JAN 22 • 23 • 24 • ';
 
 const HeroParallax = ({
-  isActive = true, // Controlled by RitualLoader via App.jsx
-  onReady,         // Fires once all Hero assets are GPU-decoded & painted on screen
+  isActive = true,
+  onReady,
   targetTimestamp = getTargetDate(),
   impactSound = customImpactAudio,
   impactVolume = 0.9,
@@ -203,6 +203,7 @@ const HeroParallax = ({
   const countdownLayerRef = useRef(null);
   const scrollCueRef = useRef(null);
   const blankVeilRef = useRef(null);
+  const frontPlaneFadeRef = useRef(null);
   const dockRef = useRef(null);
   const canvasRef = useRef(null);
   const turbulenceRef = useRef(null);
@@ -282,7 +283,6 @@ const HeroParallax = ({
 
       await Promise.all([...imagePromises, fontPromise, audioPromise]);
 
-      // Wait two animation frames to confirm DOM layers are painted on screen
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (!cancelled && onReady) {
@@ -618,9 +618,13 @@ const HeroParallax = ({
         scrollCueRef.current.style.opacity = `${cueFade}`;
       }
 
+      // Dissolve Back Plane to #050101 (behind z-index: 3 logo) & fade Front Plane out cleanly
+      const veilOpacity = Math.max(0, Math.min((p - 0.32) / 0.6, 1));
       if (blankVeilRef.current) {
-        const veilOpacity = Math.max(0, Math.min((p - 0.32) / 0.6, 1));
         blankVeilRef.current.style.opacity = `${veilOpacity}`;
+      }
+      if (frontPlaneFadeRef.current) {
+        frontPlaneFadeRef.current.style.opacity = `${Math.max(0, 1 - veilOpacity * 1.15)}`;
       }
 
       rafId = requestAnimationFrame(tick);
@@ -875,171 +879,185 @@ const HeroParallax = ({
         </defs>
       </svg>
 
-      {/* --- MAIN HERO PARALLAX RUNWAY --- */}
+      {/* --- MAIN HERO PARALLAX RUNWAY (Preserved for GSAP ScrollTrigger) --- */}
       <section className="hero-scroll-runway" ref={runwayRef}>
-        <div className="hero-sticky-viewport">
-          {isActive && (
-            <div className="hero-impact-rig">
-              <div className="hero-camera-rig">
-                {/* Layer 1: Red Sun & Sky */}
-                <div className="parallax-layer-wrapper awaken-sky">
-                  <div
-                    ref={skyRef}
-                    className="parallax-layer layer-sky"
-                    style={{ backgroundImage: `url(${skyImg})` }}
-                  />
-                  <div ref={sunPulseAuraRef} className="solar-corona-pulse" />
-                </div>
-
-                {/* Impact Flash Ring */}
-                <div className="superhero-impact-flash" />
-
-                {/* Layer 2: Scramble Subtitle + Responsive VIDYUT */}
-                <div className="parallax-layer-wrapper awaken-title">
-                  <div ref={titleLayerRef} className="hero-poster-layout">
-                    <div className="vidyut-poster-lockup">
-                      <ScrambleSubtitle isHovered={isCharacterHovered} />
-                      <div className="vidyut-glitch-wrapper">
-                        <InteractiveVidyutTitle text="VIDYUT" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Layer 2.5: Mountain + Lower Heat Haze */}
-                <div className="parallax-layer-wrapper awaken-mountain">
-                  <div
-                    ref={mountainRef}
-                    className="parallax-layer layer-mountain"
-                    style={{ backgroundImage: `url(${mountainTheyyamImg})` }}
-                  />
-                  <div
-                    ref={heatHazeLayerRef}
-                    className="parallax-layer layer-heat-haze"
-                    style={{ backgroundImage: `url(${mountainTheyyamImg})` }}
-                  />
-                </div>
-
-                {/* Warm Radiance Halo Behind Character */}
-                <div ref={characterAuraRef} className="theyyam-hover-radiance" />
-
-                {/* Layer 4: THEYYAM CHARACTER */}
-                <div className="parallax-layer-wrapper superhero-land-enter">
-                  <div
-                    ref={characterLayerRef}
-                    className="parallax-layer layer-character-top layer-character-upper"
-                    style={{ backgroundImage: `url(${theyyamCharacterImg})` }}
-                  />
-                  <div
-                    ref={characterSkirtSwayRef}
-                    className="parallax-layer layer-character-top layer-character-skirt-sway"
-                    style={{ backgroundImage: `url(${theyyamCharacterImg})` }}
-                  />
-                </div>
-
-                {/* Interactive Hitbox over Central Character */}
-                <div
-                  className="character-hover-hitbox"
-                  onMouseEnter={handleCharacterMouseEnter}
-                  onMouseLeave={handleCharacterMouseLeave}
-                  onTouchStart={handleCharacterMouseEnter}
-                  onTouchEnd={handleCharacterMouseLeave}
-                  aria-label="Theyyam Figure"
-                />
-
-                {/* Layer 5 & 6: Unified Seesaw-Tilting Orbit Plane */}
-                <div className="parallax-layer-wrapper layer-orbit-front awaken-orbit">
-                  <div ref={orbitPlaneContainerRef} className="orbit-full-viewport-box">
-                    <svg ref={frontSvgRef} className="orbit-ring-svg">
-                      <path ref={frontRingRef} className="orbit-ellipse-front" />
-                      <path
-                        ref={frontCometTrailRef}
-                        className="orbit-comet-trail"
-                        filter="url(#orbitCometGlow)"
-                      />
-                      <circle
-                        ref={frontCometHeadRef}
-                        r="4"
-                        className="orbit-comet-head"
-                        filter="url(#orbitCometGlow)"
-                      />
-                    </svg>
-
-                    <div className="orbit-dates-stage">
-                      {ribbonChars.map((ch, idx) => (
-                        <span
-                          key={idx}
-                          ref={(el) => (ribbonCharRefs.current[idx] = el)}
-                          className={`cylinder-char ${ch === '•' ? 'orbit-dot' : ''}`}
-                        >
-                          {ch === ' ' ? '\u00A0' : ch}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Layer 7: Live Procedural Fire & Embers */}
-                <div className="parallax-layer-wrapper awaken-fire">
-                  <canvas ref={canvasRef} className="fire-embers-canvas" />
-                </div>
-
-                {/* Layer 8: Liquid Glass Countdown */}
-                <div className="parallax-layer-wrapper awaken-countdown">
-                  <div ref={countdownLayerRef} className="hero-countdown-wrapper">
+        {/* BACK STICKY TRACK (z-index: 1 — Renders BEHIND VidyutLogoBackdrop z-index: 3) */}
+        <div className="hero-sticky-track track-back">
+          <div className="hero-sticky-viewport viewport-back">
+            {isActive && (
+              <div className="hero-impact-rig">
+                <div className="hero-camera-rig">
+                  {/* Layer 1: Red Sun & Sky */}
+                  <div className="parallax-layer-wrapper awaken-sky">
                     <div
-                      ref={dockRef}
-                      className="countdown-liquid-strip"
-                      onMouseMove={handleDockMouseMove}
-                    >
-                      <div className="countdown-surface-sheen" />
+                      ref={skyRef}
+                      className="parallax-layer layer-sky"
+                      style={{ backgroundImage: `url(${skyImg})` }}
+                    />
+                    <div ref={sunPulseAuraRef} className="solar-corona-pulse" />
+                  </div>
 
-                      <div className="countdown-cell">
-                        <span className="countdown-value">{timeLeft.days}</span>
-                        <span className="countdown-label">DAYS</span>
-                      </div>
+                  {/* Impact Flash Ring */}
+                  <div className="superhero-impact-flash" />
 
-                      <span className="countdown-divider" />
-
-                      <div className="countdown-cell">
-                        <span className="countdown-value">{timeLeft.hours}</span>
-                        <span className="countdown-label">HRS</span>
-                      </div>
-
-                      <span className="countdown-divider" />
-
-                      <div className="countdown-cell">
-                        <span className="countdown-value">{timeLeft.minutes}</span>
-                        <span className="countdown-label">MIN</span>
-                      </div>
-
-                      <span className="countdown-divider" />
-
-                      <div className="countdown-cell">
-                        <span className="countdown-value">{timeLeft.seconds}</span>
-                        <span className="countdown-label">SEC</span>
+                  {/* Layer 2: Scramble Subtitle + Responsive VIDYUT */}
+                  <div className="parallax-layer-wrapper awaken-title">
+                    <div ref={titleLayerRef} className="hero-poster-layout">
+                      <div className="vidyut-poster-lockup">
+                        <ScrambleSubtitle isHovered={isCharacterHovered} />
+                        <div className="vidyut-glitch-wrapper">
+                          <InteractiveVidyutTitle text="VIDYUT" />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-
-                {/* Delayed Animated "SCROLL" Prompt */}
-                <div ref={scrollCueRef} className="hero-scroll-cue-wrapper">
-                  <div className="hero-scroll-cue">
-                    <span className="scroll-cue-label">SCROLL</span>
-                    <div className="scroll-cue-track">
-                      <div className="scroll-cue-line" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="hero-bottom-fade" />
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Smooth Darkness Veil */}
-          <div ref={blankVeilRef} className="hero-blank-transition-veil" />
+            {/* Fades Sky/Sun to #050101 BEHIND the fixed z-index: 3 logo */}
+            <div ref={blankVeilRef} className="hero-blank-transition-veil" />
+          </div>
+        </div>
+
+        {/* FRONT STICKY TRACK (z-index: 4 — Renders IN FRONT OF VidyutLogoBackdrop z-index: 3) */}
+        <div className="hero-sticky-track track-front">
+          <div ref={frontPlaneFadeRef} className="hero-sticky-viewport viewport-front">
+            {isActive && (
+              <div className="hero-impact-rig">
+                <div className="hero-camera-rig">
+                  {/* Layer 2.5: Mountain + Lower Heat Haze */}
+                  <div className="parallax-layer-wrapper awaken-mountain">
+                    <div
+                      ref={mountainRef}
+                      className="parallax-layer layer-mountain"
+                      style={{ backgroundImage: `url(${mountainTheyyamImg})` }}
+                    />
+                    <div
+                      ref={heatHazeLayerRef}
+                      className="parallax-layer layer-heat-haze"
+                      style={{ backgroundImage: `url(${mountainTheyyamImg})` }}
+                    />
+                  </div>
+
+                  {/* Warm Radiance Halo Behind Character */}
+                  <div ref={characterAuraRef} className="theyyam-hover-radiance" />
+
+                  {/* Layer 4: THEYYAM CHARACTER */}
+                  <div className="parallax-layer-wrapper superhero-land-enter">
+                    <div
+                      ref={characterLayerRef}
+                      className="parallax-layer layer-character-top layer-character-upper"
+                      style={{ backgroundImage: `url(${theyyamCharacterImg})` }}
+                    />
+                    <div
+                      ref={characterSkirtSwayRef}
+                      className="parallax-layer layer-character-top layer-character-skirt-sway"
+                      style={{ backgroundImage: `url(${theyyamCharacterImg})` }}
+                    />
+                  </div>
+
+                  {/* Interactive Hitbox over Central Character */}
+                  <div
+                    className="character-hover-hitbox"
+                    onMouseEnter={handleCharacterMouseEnter}
+                    onMouseLeave={handleCharacterMouseLeave}
+                    onTouchStart={handleCharacterMouseEnter}
+                    onTouchEnd={handleCharacterMouseLeave}
+                    aria-label="Theyyam Figure"
+                  />
+
+                  {/* Layer 5 & 6: Unified Seesaw-Tilting Orbit Plane */}
+                  <div className="parallax-layer-wrapper layer-orbit-front awaken-orbit">
+                    <div ref={orbitPlaneContainerRef} className="orbit-full-viewport-box">
+                      <svg ref={frontSvgRef} className="orbit-ring-svg">
+                        <path ref={frontRingRef} className="orbit-ellipse-front" />
+                        <path
+                          ref={frontCometTrailRef}
+                          className="orbit-comet-trail"
+                          filter="url(#orbitCometGlow)"
+                        />
+                        <circle
+                          ref={frontCometHeadRef}
+                          r="4"
+                          className="orbit-comet-head"
+                          filter="url(#orbitCometGlow)"
+                        />
+                      </svg>
+
+                      <div className="orbit-dates-stage">
+                        {ribbonChars.map((ch, idx) => (
+                          <span
+                            key={idx}
+                            ref={(el) => (ribbonCharRefs.current[idx] = el)}
+                            className={`cylinder-char ${ch === '•' ? 'orbit-dot' : ''}`}
+                          >
+                            {ch === ' ' ? '\u00A0' : ch}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Layer 7: Live Procedural Fire & Embers */}
+                  <div className="parallax-layer-wrapper awaken-fire">
+                    <canvas ref={canvasRef} className="fire-embers-canvas" />
+                  </div>
+
+                  {/* Layer 8: Liquid Glass Countdown */}
+                  <div className="parallax-layer-wrapper awaken-countdown">
+                    <div ref={countdownLayerRef} className="hero-countdown-wrapper">
+                      <div
+                        ref={dockRef}
+                        className="countdown-liquid-strip"
+                        onMouseMove={handleDockMouseMove}
+                      >
+                        <div className="countdown-surface-sheen" />
+
+                        <div className="countdown-cell">
+                          <span className="countdown-value">{timeLeft.days}</span>
+                          <span className="countdown-label">DAYS</span>
+                        </div>
+
+                        <span className="countdown-divider" />
+
+                        <div className="countdown-cell">
+                          <span className="countdown-value">{timeLeft.hours}</span>
+                          <span className="countdown-label">HRS</span>
+                        </div>
+
+                        <span className="countdown-divider" />
+
+                        <div className="countdown-cell">
+                          <span className="countdown-value">{timeLeft.minutes}</span>
+                          <span className="countdown-label">MIN</span>
+                        </div>
+
+                        <span className="countdown-divider" />
+
+                        <div className="countdown-cell">
+                          <span className="countdown-value">{timeLeft.seconds}</span>
+                          <span className="countdown-label">SEC</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Delayed Animated "SCROLL" Prompt */}
+                  <div ref={scrollCueRef} className="hero-scroll-cue-wrapper">
+                    <div className="hero-scroll-cue">
+                      <span className="scroll-cue-label">SCROLL</span>
+                      <div className="scroll-cue-track">
+                        <div className="scroll-cue-line" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="hero-bottom-fade" />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </section>
     </div>

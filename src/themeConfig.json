@@ -1,7 +1,8 @@
 {
-  "themeTitle": "BE THE CHANGE",
-  "primaryPhrase": "BE THE",
-  "accentPhrase": "CHANGE",
-  "ctaText": "EXPLORE THE 2027 VISION",
-  "ctaLink": "#about"
+  "eyebrow": "THE THEME OF VIDYUT",
+  "fixedPrefix": "BE THE",
+  "highlightWord": "CHANGE",
+  "yearWatermark": "2027",
+  "ctaText": "Explore the 2027 vision",
+  "ctaLink": "#vision"
 }

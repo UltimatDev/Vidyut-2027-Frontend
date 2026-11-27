@@ -1,18 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
-import { NavLink, Link, useLocation } from 'react-router-dom';
+import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import defaultLogo from './logo.svg';
 import './Navbar.css';
 
 const DEFAULT_LINKS = [
   { label: 'HOME', to: '/' },
+  // Separate Pages
   { label: 'ABOUT', to: '/about' },
-  { label: 'EVENTS', to: '/events' },
-  { label: 'PROSHOW', to: '/proshow' },
-  { label: 'AUTOEXPO', to: '/autoexpo' },
-  { label: 'HIGHLIGHTS', to: '/highlights' },
-
-  
+  { label: 'WORKSHOPS', to: '/workshops' },
+  { label: 'COMPETITIONS', to: '/competitions' },
+  // Same-Page Sections (Home Page)
+  { label: 'REVEL', to: '/#revel' },
+  { label: 'AUTOEXPO', to: '/#autoexpo' },
+  { label: 'HIGHLIGHTS', to: '/#highlights' },
 ];
 
 const REGISTER_LINK = { label: 'REGISTER', to: '/register' };
@@ -34,12 +35,13 @@ export default function Navbar({
 
   const prefersReducedMotion = useReducedMotion();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navItems = Array.isArray(links)
     ? links
     : [...(links?.left || []), ...(links?.right || [])];
 
-  // Throttled passive scroll listener: only triggers state update when crossing 40px
+  // Throttled passive scroll listener
   useEffect(() => {
     const updateScroll = () => {
       const scrolled = window.scrollY > 40;
@@ -83,7 +85,31 @@ export default function Navbar({
     };
   }, [menuOpen]);
 
-  // Pure GPU-composited transition (opacity + transform only, no clip-path rasterization)
+  // Handle both separate routes and smooth section scrolling
+  const handleNavClick = (e, to) => {
+    setMenuOpen(false);
+
+    if (to.startsWith('/#')) {
+      e.preventDefault();
+      const targetId = to.replace('/#', '');
+
+      if (location.pathname === '/') {
+        const element = document.getElementById(targetId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      } else {
+        navigate('/');
+        setTimeout(() => {
+          const element = document.getElementById(targetId);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 120);
+      }
+    }
+  };
+
   const drawerVariants = prefersReducedMotion
     ? {
         closed: { opacity: 0 },
@@ -204,31 +230,45 @@ export default function Navbar({
 
             <nav className="ember-drawer__nav" aria-label="Full Menu">
               <ul className="ember-drawer__list">
-                {navItems.map((item, idx) => (
-                  <motion.li
-                    key={item.to}
-                    initial={
-                      prefersReducedMotion ? false : { opacity: 0, y: 12 }
-                    }
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      duration: 0.25,
-                      delay: prefersReducedMotion ? 0 : 0.05 + idx * 0.04,
-                      ease: [0.22, 1, 0.36, 1],
-                    }}
-                  >
-                    <NavLink
-                      to={item.to}
-                      end={item.to === '/'}
-                      className={({ isActive }) =>
-                        `ember-drawer__link ${isActive ? 'active' : ''}`
+                {navItems.map((item, idx) => {
+                  const isHashLink = item.to.startsWith('/#');
+
+                  return (
+                    <motion.li
+                      key={item.label}
+                      initial={
+                        prefersReducedMotion ? false : { opacity: 0, y: 12 }
                       }
-                      onClick={() => setMenuOpen(false)}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: 0.25,
+                        delay: prefersReducedMotion ? 0 : 0.05 + idx * 0.04,
+                        ease: [0.22, 1, 0.36, 1],
+                      }}
                     >
-                      {item.label}
-                    </NavLink>
-                  </motion.li>
-                ))}
+                      {isHashLink ? (
+                        <a
+                          href={item.to}
+                          className="ember-drawer__link"
+                          onClick={(e) => handleNavClick(e, item.to)}
+                        >
+                          {item.label}
+                        </a>
+                      ) : (
+                        <NavLink
+                          to={item.to}
+                          end={item.to === '/'}
+                          className={({ isActive }) =>
+                            `ember-drawer__link ${isActive ? 'active' : ''}`
+                          }
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          {item.label}
+                        </NavLink>
+                      )}
+                    </motion.li>
+                  );
+                })}
               </ul>
             </nav>
 

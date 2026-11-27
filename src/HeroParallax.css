@@ -27,10 +27,10 @@ body,
   font-display: swap;
 }
 
-/* --- STICKY SCROLL RUNWAY --- */
+/* --- STICKY SCROLL RUNWAY (No z-index, transform, opacity, or filter so tracks interleave with z-index: 3) --- */
 .hero-section-root {
   width: 100%;
-  background-color: #050101;
+  background-color: transparent;
 }
 
 .hero-scroll-runway {
@@ -39,7 +39,24 @@ body,
   height: 185vh;
   margin: 0;
   padding: 0;
-  background-color: #050101;
+  background-color: transparent;
+}
+
+/* Two synchronized sticky tracks sandwiching <VidyutLogoBackdrop /> (z-index: 3) */
+.hero-sticky-track {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.track-back {
+  z-index: 1;
+}
+
+.track-front {
+  z-index: 4;
 }
 
 .hero-sticky-viewport {
@@ -50,8 +67,17 @@ body,
   height: 100dvh;
   min-height: 560px;
   overflow: hidden;
-  background-color: #050101;
   user-select: none;
+  pointer-events: none;
+}
+
+.viewport-back {
+  background-color: #050101;
+}
+
+.viewport-front {
+  background-color: transparent;
+  will-change: opacity;
 }
 
 .hero-impact-rig {
@@ -59,6 +85,7 @@ body,
   inset: 0;
   width: 100%;
   height: 100%;
+  pointer-events: none;
   animation: superheroImpactShake 0.58s cubic-bezier(0.22, 1, 0.36, 1) 0.38s both;
   will-change: transform;
 }
@@ -92,6 +119,7 @@ body,
   inset: 0;
   width: 100%;
   height: 100%;
+  pointer-events: none;
   animation: cameraBreathing 10s ease-in-out infinite alternate 1.2s;
   will-change: transform;
 }
@@ -105,10 +133,11 @@ body,
   }
 }
 
+/* Inside .viewport-back (global z-index: 1), so it never covers the z-index: 3 logo */
 .hero-blank-transition-veil {
   position: absolute;
   inset: 0;
-  z-index: 12;
+  z-index: 10;
   background-color: #050101;
   opacity: 0;
   pointer-events: none;

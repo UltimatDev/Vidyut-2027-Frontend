@@ -1,5 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import RitualLoader from './RitualLoader';
+import VidyutLogoBackdrop from './VidyutLogoBackdrop';
 import HeroParallax from './HeroParallax';
 import Navbar from './Navbar';
 import ThemeSection from './ThemeSection';
@@ -11,10 +15,11 @@ import ArcShowcaseSection from './components/ArcShowcaseSection';
 import { showcaseConfig } from './components/showcaseConfig';
 import Footer from './components/Footer/Footer';
 
-// Optional: point to your Vidyut logo asset (or pass null for the built-in crest)
-import vidyutLogo from '/logo.svg';
+import vidyutLogo from './logo.svg';
 
-function App() {
+gsap.registerPlugin(ScrollTrigger);
+
+function HomePage() {
   const [hasEntered, setHasEntered] = useState(false);
   const [readyFlags, setReadyFlags] = useState({
     hero: false,
@@ -25,15 +30,21 @@ function App() {
     setReadyFlags((prev) => ({ ...prev, hero: true }));
   }, []);
 
-  // Automatically verifies downstream images, fonts, and Revel CRT video headers without editing child components
+  // Re-measure all GSAP ScrollTriggers once RitualLoader unlocks page scroll
+  useEffect(() => {
+    if (!hasEntered) return;
+    const timer = setTimeout(() => {
+      ScrollTrigger.refresh();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [hasEntered]);
+
   useEffect(() => {
     let cancelled = false;
 
     const verifyDownstreamAssets = async () => {
-      // Wait one frame for all child sections to mount into the DOM
       await new Promise((resolve) => requestAnimationFrame(resolve));
 
-      // 1. Wait for all above-the-fold & eager <img> elements in downstream sections
       const domImages = Array.from(document.querySelectorAll('img')).filter(
         (img) => img.loading !== 'lazy'
       );
@@ -46,7 +57,6 @@ function App() {
         });
       });
 
-      // 2. Warm up RevelCrtStage video metadata (/drone_8s.mp4 & /loop_video.mp4)
       const videoSources = ['/drone_8s.mp4', '/loop_video.mp4'];
       const videoPromises = videoSources.map(
         (src) =>
@@ -61,8 +71,6 @@ function App() {
       );
 
       const fontPromise = document.fonts ? document.fonts.ready : Promise.resolve();
-
-      // Cap wait at 2.8s so slow network videos never block the user from entering
       const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 2800));
 
       await Promise.race([
@@ -92,29 +100,73 @@ function App() {
         onEnter={() => setHasEntered(true)}
       />
 
-      <Navbar />
+      {/* Continuous 2.5D Logo Layer behind HeroParallax & ThemeSection */}
+      <VidyutLogoBackdrop logoSrc={vidyutLogo} />
 
-      <HeroParallax
-        isActive={hasEntered}
-        onReady={handleHeroReady}
-      />
+      <HeroParallax isActive={hasEntered} onReady={handleHeroReady} />
 
       <ThemeSection />
-      <HighlightsSection />
-      <ElasticGallery />
-      <RevelCrtStage
-        droneSrc="/drone_8s.mp4"
-        loopSrc="/loop_video.mp4"
-        holeLeft={4}
-        holeTop={13}
-        holeWidth={72}
-        holeHeight={77}
-        lineup={DEFAULT_REVEL_LINEUP}
-      />
-      <ArcShowcaseSection
-        workshops={showcaseConfig.workshops}
-        competitions={showcaseConfig.competitions}
-      />
+
+      {/* Solid background wrapper at z-index: 5 so downstream sections cleanly cover the fixed backdrop */}
+      <div style={{ position: 'relative', zIndex: 5, backgroundColor: '#050505' }}>
+        <div id="highlights" style={{ scrollMarginTop: '80px' }}>
+          <HighlightsSection />
+        </div>
+
+        <div id="autoexpo" style={{ scrollMarginTop: '80px' }}>
+          <ElasticGallery />
+        </div>
+
+        <div id="revel" style={{ scrollMarginTop: '80px' }}>
+          <RevelCrtStage
+            droneSrc="/drone_8s.mp4"
+            loopSrc="/loop_video.mp4"
+            holeLeft={4}
+            holeTop={13}
+            holeWidth={72}
+            holeHeight={77}
+            lineup={DEFAULT_REVEL_LINEUP}
+          />
+        </div>
+
+        <ArcShowcaseSection
+          workshops={showcaseConfig.workshops}
+          competitions={showcaseConfig.competitions}
+        />
+      </div>
+    </>
+  );
+}
+
+function BlankPage({ title }) {
+  return (
+    <main
+      style={{
+        minHeight: '100vh',
+        background: '#0a0a0a',
+        color: '#fff',
+        display: 'grid',
+        placeItems: 'center',
+      }}
+    >
+      <h1>{title}</h1>
+    </main>
+  );
+}
+
+function App() {
+  return (
+    <>
+      <Navbar />
+
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/about" element={<BlankPage title="About" />} />
+        <Route path="/workshops" element={<BlankPage title="Workshops" />} />
+        <Route path="/competitions" element={<BlankPage title="Competitions" />} />
+        <Route path="/register" element={<BlankPage title="Register" />} />
+      </Routes>
+
       <Footer />
     </>
   );
