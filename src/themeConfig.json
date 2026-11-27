@@ -1,8 +1,4 @@
 {
-  "eyebrow": "THE THEME OF VIDYUT",
-  "fixedPrefix": "BE THE",
-  "highlightWord": "CHANGE",
-  "yearWatermark": "2027",
-  "ctaText": "Explore the 2027 vision",
-  "ctaLink": "#vision"
+  "prefix": "BE THE",
+  "word": "CHANGE"
 }

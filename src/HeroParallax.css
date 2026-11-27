@@ -27,7 +27,7 @@ body,
   font-display: swap;
 }
 
-/* --- STICKY SCROLL RUNWAY (No z-index, transform, opacity, or filter so tracks interleave with z-index: 3) --- */
+/* --- STICKY SCROLL RUNWAY --- */
 .hero-section-root {
   width: 100%;
   background-color: transparent;
@@ -36,13 +36,12 @@ body,
 .hero-scroll-runway {
   position: relative;
   width: 100%;
-  height: 185vh;
+  height: 175vh;
   margin: 0;
   padding: 0;
   background-color: transparent;
 }
 
-/* Two synchronized sticky tracks sandwiching <VidyutLogoBackdrop /> (z-index: 3) */
 .hero-sticky-track {
   position: absolute;
   inset: 0;
@@ -133,7 +132,6 @@ body,
   }
 }
 
-/* Inside .viewport-back (global z-index: 1), so it never covers the z-index: 3 logo */
 .hero-blank-transition-veil {
   position: absolute;
   inset: 0;
@@ -899,8 +897,48 @@ body,
   background: linear-gradient(to bottom, transparent 0%, #050101 100%);
 }
 
-/* --- MOBILE RESPONSIVE TUNING --- */
+/* ============================================================================
+   MOBILE-ONLY OPTIMIZATIONS (Strictly <= 768px — Laptop/Desktop stays 100% full)
+   ============================================================================ */
 @media (max-width: 768px) {
+  .hero-scroll-runway {
+    height: 145vh;
+  }
+
+  .layer-heat-haze,
+  .layer-character-skirt-sway {
+    display: none !important;
+  }
+
+  .layer-character-upper {
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .superhero-land-enter {
+    animation: superheroDropMobile 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .hero-camera-rig {
+    animation: none;
+  }
+
+  .countdown-liquid-strip {
+    padding: 0.58rem 0.65rem;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(24, 4, 3, 0.88);
+  }
+
+  .countdown-liquid-strip::before {
+    animation: none;
+  }
+
+  .orbit-comet-trail,
+  .orbit-comet-head {
+    filter: none;
+  }
+
   .vidyut-poster-lockup {
     margin-top: 13vh;
     padding: 0 3vw;
@@ -926,9 +964,6 @@ body,
   .awaken-countdown {
     padding-bottom: 9.5vh;
   }
-  .countdown-liquid-strip {
-    padding: 0.58rem 0.65rem;
-  }
   .countdown-cell {
     min-width: 48px;
     padding: 0 0.3rem;
@@ -943,6 +978,21 @@ body,
   }
   .countdown-divider {
     height: 22px;
+  }
+}
+
+@keyframes superheroDropMobile {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -85vh, 0) scale(1.08);
+  }
+  70% {
+    opacity: 1;
+    transform: translate3d(0, 10px, 0) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
@@ -981,4 +1031,25 @@ body,
     animation: none !important;
     opacity: 0.8;
   }
+}
+
+/* Remove `scroll-behavior: smooth` so Lenis + GSAP scrub don't fight native scrolling */
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  background-color: #050101;
+  overflow-x: clip;
+}
+
+/* Tighten runway from 185vh -> 145vh so there's no dead black scroll tail */
+.hero-scroll-runway {
+  position: relative;
+  width: 100%;
+  height: 145vh;
+  margin: 0;
+  padding: 0;
+  background-color: transparent;
 }

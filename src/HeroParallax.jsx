@@ -4,13 +4,7 @@ import './HeroParallax.css';
 import skyImg from './assets/sky.png';
 import mountainTheyyamImg from './assets/MOUNTAIN with theyam.png';
 import theyyamCharacterImg from './assets/web.png';
-
-// ============================================================================
-// EASY AUDIO SWAP:
-// Drop your .mp3/.wav in src/assets/ and import it here:
 import customImpactAudio from './assets/slam.mp3';
-// ============================================================================
-//const customImpactAudio = null;
 
 const SUBTITLE_DEFAULT = 'NATIONAL LEVEL MULTIFEST';
 const SUBTITLE_HOVER = 'BE THE CHANGE';
@@ -68,6 +62,7 @@ const InteractiveVidyutTitle = ({ text = 'VIDYUT' }) => {
   const letterRefs = useRef([]);
 
   const handleLetterMove = (e, idx) => {
+    if (window.innerWidth <= 768) return;
     const el = letterRefs.current[idx];
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -204,6 +199,7 @@ const HeroParallax = ({
   const scrollCueRef = useRef(null);
   const blankVeilRef = useRef(null);
   const frontPlaneFadeRef = useRef(null);
+  const fireLayerRef = useRef(null);
   const dockRef = useRef(null);
   const canvasRef = useRef(null);
   const turbulenceRef = useRef(null);
@@ -242,7 +238,7 @@ const HeroParallax = ({
     seconds: '00',
   });
 
-  // 1. Preload & GPU-Decode All Hero Textures & Fonts, Then Signal `onReady()`
+  // 1. Preload & GPU-Decode Textures, Fonts & slam.mp3, Then Signal `onReady()`
   useEffect(() => {
     let cancelled = false;
 
@@ -299,7 +295,7 @@ const HeroParallax = ({
     };
   }, [impactSound, impactVolume, onReady]);
 
-  // 2. Trigger Superhero Drop + Synchronized Ground-Slam Audio when `isActive` turns true
+  // 2. Trigger Superhero Drop + Synchronized slam.mp3 Playback when `isActive` turns true
   useEffect(() => {
     if (!isActive || hasTriggeredEntranceRef.current) return;
     hasTriggeredEntranceRef.current = true;
@@ -335,7 +331,9 @@ const HeroParallax = ({
 
       if (audioRef.current) {
         audioRef.current.currentTime = 0;
-        audioRef.current.play().catch(() => {});
+        audioRef.current.play().catch(() => {
+          playSynthesizedGroundSlam(audioCtxRef.current);
+        });
       } else {
         playSynthesizedGroundSlam(audioCtxRef.current);
       }
@@ -344,7 +342,6 @@ const HeroParallax = ({
     return () => clearTimeout(impactTimer);
   }, [isActive]);
 
-  // Character Hover / Touch Handlers
   const handleCharacterMouseEnter = useCallback(() => {
     setIsCharacterHovered(true);
     isCharacterHoveredRef.current = true;
@@ -378,9 +375,10 @@ const HeroParallax = ({
     return () => clearInterval(interval);
   }, [targetTimestamp]);
 
-  // Cursor Tracking
+  // Cursor Tracking (Desktop)
   useEffect(() => {
     const handlePointerMove = (e) => {
+      if (window.innerWidth <= 768) return;
       const px = e.clientX / window.innerWidth;
       const py = e.clientY / window.innerHeight;
       mouseTarget.current = { x: (px - 0.5) * 2, y: (py - 0.5) * 2 };
@@ -422,14 +420,17 @@ const HeroParallax = ({
 
     const tick = (now) => {
       const elapsed = (now - startTime) * 0.001;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const isMobile = vw <= 768;
 
       scrollCurrent.current += (scrollTarget.current - scrollCurrent.current) * 0.095;
       const p = scrollCurrent.current;
 
       const cur = mouseCurrent.current;
       const tgt = mouseTarget.current;
-      cur.x += (tgt.x - cur.x) * 0.07;
-      cur.y += (tgt.y - cur.y) * 0.07;
+      cur.x = isMobile ? 0 : cur.x + (tgt.x - cur.x) * 0.07;
+      cur.y = isMobile ? 0 : cur.y + (tgt.y - cur.y) * 0.07;
 
       const hoverTarget = isCharacterHoveredRef.current ? 1 : 0;
       characterShineCurrentRef.current += (hoverTarget - characterShineCurrentRef.current) * 0.08;
@@ -439,7 +440,8 @@ const HeroParallax = ({
       const idleBreath = Math.sin(elapsed * 1.15);
       const idleSway = Math.cos(elapsed * 0.75);
 
-      if (!prefersReducedMotion) {
+      // 1. SVG Heat Haze & Cloth Sway Turbulence (Desktop Only)
+      if (!prefersReducedMotion && !isMobile) {
         if (turbulenceRef.current) {
           const bfX = 0.012 + Math.sin(elapsed * 1.4) * 0.003;
           const bfY = 0.055 + Math.cos(elapsed * 1.8) * 0.012;
@@ -455,14 +457,19 @@ const HeroParallax = ({
         }
       }
 
+      // 2. Sky & Solar Corona Pulse
       if (skyRef.current) {
         const skyY = p * 165 - cur.y * 10;
-        const skyX = -cur.x * 14 + idleSway * 4;
+        const skyX = -cur.x * 14 + (isMobile ? 0 : idleSway * 4);
         const skyScale = 1.08 + sunPulse * 0.018 - p * 0.07;
-        skyRef.current.style.transform = `translate3d(${skyX}px, ${skyY}px, 0) scale(${skyScale})`;
-        skyRef.current.style.filter = `brightness(${0.96 + sunPulse * 0.16}) saturate(${
-          1.02 + sunPulse * 0.12
-        })`;
+        skyRef.current.style.transform = `translate3d(${skyX.toFixed(1)}px, ${skyY.toFixed(
+          1
+        )}px, 0) scale(${skyScale.toFixed(3)})`;
+        if (!isMobile) {
+          skyRef.current.style.filter = `brightness(${0.96 + sunPulse * 0.16}) saturate(${
+            1.02 + sunPulse * 0.12
+          })`;
+        }
       }
 
       if (sunPulseAuraRef.current) {
@@ -472,23 +479,35 @@ const HeroParallax = ({
         }px, 0) scale(${0.92 + sunPulse * 0.16})`;
       }
 
+      // 3. Title Lockup
       if (titleLayerRef.current) {
         const tY = p * 235;
         const tScale = 1 - p * 0.13;
         const tOpacity = Math.max(1 - p * 1.45, 0);
-        titleLayerRef.current.style.transform = `translate3d(${-cur.x * 5}px, ${tY}px, 0) scale(${tScale})`;
+        titleLayerRef.current.style.transform = `translate3d(${-cur.x * 5}px, ${tY.toFixed(
+          1
+        )}px, 0) scale(${tScale.toFixed(3)})`;
         titleLayerRef.current.style.opacity = `${tOpacity}`;
       }
 
+      // 4. Mountain, Character & Lower Skirt Sway Layers
       const mRotY = cur.x * 3.2 + idleSway * 0.5;
       const mRotX = -cur.y * 2.0;
       const mShiftX = cur.x * 10;
       const mShiftY = p * -50 + idleBreath * 3.5 + cur.y * 5;
       const mScale = 1.03 + p * 0.15;
-      const scenePlaneTransform = `perspective(1200px) translate3d(${mShiftX}px, ${mShiftY}px, 0) rotateX(${mRotX}deg) rotateY(${mRotY}deg) scale(${mScale})`;
+      const scenePlaneTransform = isMobile
+        ? `translate3d(0px, ${mShiftY.toFixed(1)}px, 0) scale(${mScale.toFixed(3)})`
+        : `perspective(1200px) translate3d(${mShiftX.toFixed(1)}px, ${mShiftY.toFixed(
+            1
+          )}px, 0) rotateX(${mRotX.toFixed(2)}deg) rotateY(${mRotY.toFixed(2)}deg) scale(${mScale.toFixed(
+            3
+          )})`;
 
       if (mountainRef.current) mountainRef.current.style.transform = scenePlaneTransform;
-      if (heatHazeLayerRef.current) heatHazeLayerRef.current.style.transform = scenePlaneTransform;
+      if (heatHazeLayerRef.current && !isMobile) {
+        heatHazeLayerRef.current.style.transform = scenePlaneTransform;
+      }
 
       const charFilter = `brightness(${(0.96 + shine * 0.28).toFixed(3)}) contrast(${(
         1.06 +
@@ -497,23 +516,22 @@ const HeroParallax = ({
 
       if (characterLayerRef.current) {
         characterLayerRef.current.style.transform = scenePlaneTransform;
-        characterLayerRef.current.style.filter = charFilter;
+        if (!isMobile) {
+          characterLayerRef.current.style.filter = charFilter;
+        }
       }
-      if (characterSkirtSwayRef.current) {
+      if (characterSkirtSwayRef.current && !isMobile) {
         characterSkirtSwayRef.current.style.transform = scenePlaneTransform;
         characterSkirtSwayRef.current.style.filter = `url(#theyamClothSway) ${charFilter}`;
       }
       if (characterAuraRef.current) {
         characterAuraRef.current.style.opacity = `${(0.12 + shine * 0.68).toFixed(3)}`;
-        characterAuraRef.current.style.transform = `translate3d(${mShiftX}px, ${mShiftY}px, 0) scale(${(
-          0.95 +
-          shine * 0.22
-        ).toFixed(3)})`;
+        characterAuraRef.current.style.transform = `translate3d(${mShiftX.toFixed(
+          1
+        )}px, ${mShiftY.toFixed(1)}px, 0) scale(${(0.95 + shine * 0.22).toFixed(3)})`;
       }
 
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      const isMobile = vw <= 768;
+      // 5. Continuous Packed Orbit + Comet
       const cx = vw * 0.5;
       const cy = isMobile ? vh * 0.6 : vh * 0.58;
       const radiusX = isMobile
@@ -618,13 +636,16 @@ const HeroParallax = ({
         scrollCueRef.current.style.opacity = `${cueFade}`;
       }
 
-      // Dissolve Back Plane to #050101 (behind z-index: 3 logo) & fade Front Plane out cleanly
-      const veilOpacity = Math.max(0, Math.min((p - 0.32) / 0.6, 1));
+      // 6. Preserve Full Parallax for First 62% of Scroll, Then Dissolve Cleanly into ThemeSection
+      const veilOpacity = Math.max(0, Math.min((p - 0.62) / 0.36, 1));
       if (blankVeilRef.current) {
         blankVeilRef.current.style.opacity = `${veilOpacity}`;
       }
       if (frontPlaneFadeRef.current) {
-        frontPlaneFadeRef.current.style.opacity = `${Math.max(0, 1 - veilOpacity * 1.15)}`;
+        frontPlaneFadeRef.current.style.opacity = `${Math.max(0, 1 - veilOpacity)}`;
+      }
+      if (fireLayerRef.current) {
+        fireLayerRef.current.style.opacity = `${Math.max(0, 1 - veilOpacity * 1.15)}`;
       }
 
       rafId = requestAnimationFrame(tick);
@@ -646,6 +667,8 @@ const HeroParallax = ({
     const ctx = canvas.getContext('2d');
     let animationFrameId;
 
+    const isMobile = window.innerWidth <= 768;
+
     const setCanvasSize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -662,7 +685,7 @@ const HeroParallax = ({
         this.y = initial
           ? canvas.height - Math.random() * (canvas.height * 0.14)
           : canvas.height + 40;
-        this.radius = Math.random() * 62 + 30;
+        this.radius = Math.random() * (isMobile ? 48 : 62) + 30;
         this.speedY = Math.random() * 1.6 + 0.9;
         this.speedX = (Math.random() - 0.5) * 0.7;
         this.life = 1;
@@ -762,33 +785,40 @@ const HeroParallax = ({
       }
     }
 
-    const flames = Array.from(
-      { length: Math.min(Math.floor(window.innerWidth / 22), 58) },
-      () => new FlamePlume()
-    );
-    const embers = Array.from(
-      { length: Math.min(Math.floor(window.innerWidth / 11), 135) },
-      () => new Ember()
-    );
+    const flameCount = isMobile ? 16 : Math.min(Math.floor(window.innerWidth / 22), 58);
+    const emberCount = isMobile ? 36 : Math.min(Math.floor(window.innerWidth / 11), 135);
+
+    const flames = Array.from({ length: flameCount }, () => new FlamePlume());
+    const embers = Array.from({ length: emberCount }, () => new Ember());
 
     let hoverSpawnTicker = 0;
 
     const renderLoop = () => {
+      const scrollBoost = scrollCurrent.current;
+
+      if (scrollBoost >= 0.96) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        animationFrameId = requestAnimationFrame(renderLoop);
+        return;
+      }
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.globalCompositeOperation = 'lighter';
-      const scrollBoost = scrollCurrent.current;
 
       if (shockwaveBurstRef.current) {
         shockwaveBurstRef.current = false;
-        embers.slice(0, 55).forEach((e) => e.blastFromImpact());
+        const burstSlice = isMobile ? 18 : 55;
+        embers.slice(0, burstSlice).forEach((e) => e.blastFromImpact());
       }
 
       if (figureEdgeBurstRef.current) {
         figureEdgeBurstRef.current = false;
-        embers.slice(55, 82).forEach((e) => e.spawnFromCharacterEdge());
+        const startIdx = isMobile ? 18 : 55;
+        const endIdx = isMobile ? 30 : 82;
+        embers.slice(startIdx, endIdx).forEach((e) => e.spawnFromCharacterEdge());
       }
 
-      if (isCharacterHoveredRef.current) {
+      if (isCharacterHoveredRef.current && !isMobile) {
         hoverSpawnTicker += 1;
         if (hoverSpawnTicker % 6 === 0) {
           const candidate = embers.find((e) => !e.isShockSpark);
@@ -817,6 +847,7 @@ const HeroParallax = ({
   }, [isActive]);
 
   const handleDockMouseMove = (e) => {
+    if (window.innerWidth <= 768) return;
     const el = dockRef.current;
     if (!el) return;
     const rect = el.getBoundingClientRect();
@@ -879,7 +910,7 @@ const HeroParallax = ({
         </defs>
       </svg>
 
-      {/* --- MAIN HERO PARALLAX RUNWAY (Preserved for GSAP ScrollTrigger) --- */}
+      {/* --- MAIN HERO PARALLAX RUNWAY --- */}
       <section className="hero-scroll-runway" ref={runwayRef}>
         {/* BACK STICKY TRACK (z-index: 1 — Renders BEHIND VidyutLogoBackdrop z-index: 3) */}
         <div className="hero-sticky-track track-back">
@@ -887,7 +918,6 @@ const HeroParallax = ({
             {isActive && (
               <div className="hero-impact-rig">
                 <div className="hero-camera-rig">
-                  {/* Layer 1: Red Sun & Sky */}
                   <div className="parallax-layer-wrapper awaken-sky">
                     <div
                       ref={skyRef}
@@ -897,10 +927,8 @@ const HeroParallax = ({
                     <div ref={sunPulseAuraRef} className="solar-corona-pulse" />
                   </div>
 
-                  {/* Impact Flash Ring */}
                   <div className="superhero-impact-flash" />
 
-                  {/* Layer 2: Scramble Subtitle + Responsive VIDYUT */}
                   <div className="parallax-layer-wrapper awaken-title">
                     <div ref={titleLayerRef} className="hero-poster-layout">
                       <div className="vidyut-poster-lockup">
@@ -915,7 +943,6 @@ const HeroParallax = ({
               </div>
             )}
 
-            {/* Fades Sky/Sun to #050101 BEHIND the fixed z-index: 3 logo */}
             <div ref={blankVeilRef} className="hero-blank-transition-veil" />
           </div>
         </div>
@@ -926,7 +953,6 @@ const HeroParallax = ({
             {isActive && (
               <div className="hero-impact-rig">
                 <div className="hero-camera-rig">
-                  {/* Layer 2.5: Mountain + Lower Heat Haze */}
                   <div className="parallax-layer-wrapper awaken-mountain">
                     <div
                       ref={mountainRef}
@@ -940,10 +966,8 @@ const HeroParallax = ({
                     />
                   </div>
 
-                  {/* Warm Radiance Halo Behind Character */}
                   <div ref={characterAuraRef} className="theyyam-hover-radiance" />
 
-                  {/* Layer 4: THEYYAM CHARACTER */}
                   <div className="parallax-layer-wrapper superhero-land-enter">
                     <div
                       ref={characterLayerRef}
@@ -957,7 +981,6 @@ const HeroParallax = ({
                     />
                   </div>
 
-                  {/* Interactive Hitbox over Central Character */}
                   <div
                     className="character-hover-hitbox"
                     onMouseEnter={handleCharacterMouseEnter}
@@ -967,7 +990,6 @@ const HeroParallax = ({
                     aria-label="Theyyam Figure"
                   />
 
-                  {/* Layer 5 & 6: Unified Seesaw-Tilting Orbit Plane */}
                   <div className="parallax-layer-wrapper layer-orbit-front awaken-orbit">
                     <div ref={orbitPlaneContainerRef} className="orbit-full-viewport-box">
                       <svg ref={frontSvgRef} className="orbit-ring-svg">
@@ -999,12 +1021,10 @@ const HeroParallax = ({
                     </div>
                   </div>
 
-                  {/* Layer 7: Live Procedural Fire & Embers */}
-                  <div className="parallax-layer-wrapper awaken-fire">
+                  <div ref={fireLayerRef} className="parallax-layer-wrapper awaken-fire">
                     <canvas ref={canvasRef} className="fire-embers-canvas" />
                   </div>
 
-                  {/* Layer 8: Liquid Glass Countdown */}
                   <div className="parallax-layer-wrapper awaken-countdown">
                     <div ref={countdownLayerRef} className="hero-countdown-wrapper">
                       <div
@@ -1043,7 +1063,6 @@ const HeroParallax = ({
                     </div>
                   </div>
 
-                  {/* Delayed Animated "SCROLL" Prompt */}
                   <div ref={scrollCueRef} className="hero-scroll-cue-wrapper">
                     <div className="hero-scroll-cue">
                       <span className="scroll-cue-label">SCROLL</span>

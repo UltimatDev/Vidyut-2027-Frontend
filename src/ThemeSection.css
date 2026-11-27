@@ -1,41 +1,114 @@
-/* ThemeSection.css - Cinzel Display + Manrope Body, Highlighted "BE THE CHANGE" */
+/* ThemeSection.css - Seamless Hero Transition & Variable Font "BE THE CHANGE" */
 
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700;800;900&family=Manrope:wght@500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Anybody:wdth,wght@50..150,100..900&display=swap');
 
-.btc-pinned-section {
+/* Pulls ThemeSection up into HeroParallax's faded tail without affecting GSAP's pin-spacer */
+.btc-seamless-bridge {
+  position: relative;
+  z-index: 5;
+  margin-top: -38vh;
+  pointer-events: none;
+}
+
+.btc-morph-section {
+  --btc-cream: #f3e7d3;
+  --btc-cold-grey: #6b6b6b;
+  --btc-orange: #ff7a1a;
+
   position: relative;
   width: 100%;
   height: 100vh;
-  /* Sits above VidyutLogoBackdrop (z-index: 3) so text is crisp over the emblem */
-  z-index: 4;
+  height: 100dvh;
+  /* Feathers smoothly from Hero's #050101 veil (zero hard horizontal seam) into #0a0605 and #050505 below */
+  background: linear-gradient(
+    to bottom,
+    rgba(5, 1, 1, 0) 0%,
+    rgba(5, 1, 1, 0.92) 22%,
+    #0a0605 50%,
+    #0a0605 86%,
+    #050505 100%
+  );
+  color: var(--btc-cream);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  padding: 0 clamp(1.25rem, 5vw, 3.5rem);
+  /* Minimal top padding, extra bottom balance so text sits cleanly without a tall empty gap above it */
+  padding: clamp(0.5rem, 2vh, 1.5rem) clamp(1rem, 4vw, 3rem) clamp(3.5rem, 9vh, 6rem);
   box-sizing: border-box;
-  background: transparent;
+  user-select: none;
 }
 
-/* Transparent at the outer edges so scrolling in never slices the fixed logo */
-.btc-radial-vignette {
+.btc-morph-section.is-offscreen * {
+  animation-play-state: paused !important;
+}
+
+/* Apply will-change: transform strictly while pinned */
+.btc-morph-section.is-pinned .btc-word-rig,
+.btc-morph-section.is-pinned .btc-letter-slot,
+.btc-morph-section.is-pinned .btc-prefix {
+  will-change: transform, opacity;
+}
+
+.btc-morph-section.is-pinned .btc-letter-copy,
+.btc-morph-section.is-pinned .btc-flash-overlay,
+.btc-morph-section.is-pinned .btc-flicker-glow {
+  will-change: opacity;
+}
+
+/* Faint Flicker Glow Behind Word */
+.btc-flicker-glow {
   position: absolute;
   inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: none;
-  background: radial-gradient(
-    ellipse 55% 45% at 50% 50%,
-    rgba(5, 1, 1, 0.58) 0%,
-    rgba(5, 1, 1, 0.22) 55%,
-    transparent 80%
-  );
   z-index: 1;
 }
 
-.btc-pinned-stage {
-  position: relative;
-  z-index: 3;
+.btc-flicker-core {
+  width: min(86vw, 920px);
+  height: min(36vh, 320px);
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 138, 36, 0.24) 0%,
+    rgba(196, 44, 12, 0.11) 46%,
+    transparent 74%
+  );
+  animation: btcFaintFlicker 3.6s linear infinite;
+}
+
+/* Soft Radial Flash Overlay */
+.btc-flash-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+  background: radial-gradient(
+    circle at 50% 48%,
+    rgba(255, 245, 198, 0.44) 0%,
+    rgba(255, 122, 26, 0.2) 38%,
+    transparent 72%
+  );
+}
+
+/* Embers Burst Canvas */
+.btc-embers-canvas {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  max-width: 1240px;
+  height: 100%;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Centered Typography Stage */
+.btc-stage {
+  position: relative;
+  z-index: 2;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -43,193 +116,140 @@
   text-align: center;
 }
 
-/* Wide Letter-Spaced Outlined "2027" Behind the Heading */
-.btc-year-outline {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -52%);
-  font-family: 'Cinzel', serif;
-  font-weight: 900;
-  font-size: clamp(6.5rem, 23vw, 20rem);
-  line-height: 1;
-  letter-spacing: 0.18em;
-  color: transparent;
-  -webkit-text-stroke: 1.5px rgba(255, 194, 112, 0.22);
-  user-select: none;
-  pointer-events: none;
-  z-index: 1;
-  white-space: nowrap;
-}
-
-/* Foreground Heading Block */
-.btc-headline-block {
-  position: relative;
-  z-index: 2;
+.btc-entry-fade {
+  width: 100%;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  justify-content: center;
 }
 
-.btc-eyebrow {
-  font-family: 'Manrope', sans-serif;
-  font-weight: 600;
-  font-size: clamp(0.74rem, 1.15vw, 0.9rem);
-  letter-spacing: 0.38em;
+/* Small Cream "BE THE" */
+.btc-prefix {
+  font-family: 'Anybody', sans-serif;
+  font-variation-settings: 'wght' 400, 'wdth' 105;
+  font-size: clamp(0.85rem, 1.65vw, 1.35rem);
+  letter-spacing: 0.48em;
+  padding-left: 0.48em;
   text-transform: uppercase;
-  color: rgba(255, 208, 145, 0.88);
-  margin-bottom: clamp(0.85rem, 2vh, 1.35rem);
+  color: var(--btc-cream);
+  margin: 0 0 clamp(0.35rem, 1.2vh, 0.85rem);
 }
 
-.btc-main-heading {
-  font-family: 'Cinzel', serif;
-  font-weight: 800;
-  font-size: clamp(2.4rem, 7.2vw, 6.4rem);
-  line-height: 1.25;
-  letter-spacing: 0.05em;
+/* Whole-Word Punch Container & 3D Perspective Stage */
+.btc-word-rig {
+  perspective: 1000px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.btc-change-word {
+  font-family: 'Anybody', sans-serif;
+  font-size: clamp(2.4rem, 13.5vw, 11.2rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   margin: 0;
-  padding: 0.15em 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  gap: 0.34em;
+  flex-wrap: nowrap;
+  transform-style: preserve-3d;
 }
 
-/* "BE THE" — Clean Warm Ivory/Gold Gradient */
-.btc-fixed-phrase {
+/* Individual Animated Letter Slot */
+.btc-letter-slot {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  font-variation-settings: 'wght' 800, 'wdth' 112;
+  transform-origin: center center;
+}
+
+.btc-letter-copy {
+  grid-area: 1 / 1;
   display: inline-block;
+  font-variation-settings: inherit;
+  padding: 0.04em 0.02em;
+}
+
+.btc-letter-cold {
+  color: var(--btc-cold-grey);
+}
+
+.btc-letter-hot {
   background: linear-gradient(
-    180deg,
-    #ffffff 0%,
-    #f5e4c8 58%,
-    #d6b382 100%
+    to top,
+    #fff3a1 0%,
+    #ffb03a 28%,
+    #ff7a1a 56%,
+    #a81209 100%
   );
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.85));
 }
 
-/* Highlighted "CHANGE" — Focal Hero Word of the Theme */
-.btc-highlight-wrap {
-  position: relative;
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 0.05em 0.18em;
+@keyframes btcFaintFlicker {
+  0% {
+    opacity: 0.72;
+  }
+  18% {
+    opacity: 0.96;
+  }
+  34% {
+    opacity: 0.68;
+  }
+  52% {
+    opacity: 1;
+  }
+  69% {
+    opacity: 0.78;
+  }
+  84% {
+    opacity: 0.92;
+  }
+  100% {
+    opacity: 0.72;
+  }
 }
 
-.btc-highlight-word {
-  position: relative;
-  display: inline-block;
-  font-weight: 900;
-  font-style: normal;
-  transform: skewX(-12deg);
-  background: linear-gradient(
-    175deg,
-    #fffdf7 0%,
-    #ffd782 38%,
-    #ff8b26 78%,
-    #ff4d00 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  filter:
-    drop-shadow(0 2px 10px rgba(255, 175, 65, 0.45))
-    drop-shadow(0 8px 28px rgba(255, 85, 0, 0.38));
-}
-
-/* Subtle Ember Accent Bar Anchoring "CHANGE" */
-.btc-highlight-underline {
-  width: 92%;
-  height: 2px;
-  margin-top: 0.08em;
-  transform: skewX(-12deg);
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    #ff9e38 25%,
-    #fff1cc 50%,
-    #ff6a1a 75%,
-    transparent 100%
-  );
-  box-shadow: 0 0 14px rgba(255, 130, 35, 0.75);
-}
-
-/* Button-Styled CTA with Arrow Motion on Hover */
-.btc-cta-wrapper {
-  position: relative;
-  z-index: 3;
-  margin-top: clamp(1.85rem, 4.2vh, 2.85rem);
-}
-
-.btc-vision-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.92rem 1.9rem;
-  font-family: 'Manrope', sans-serif;
-  font-weight: 600;
-  font-size: clamp(0.82rem, 1.15vw, 0.96rem);
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #fff6e8;
-  text-decoration: none;
-  background: rgba(255, 148, 46, 0.12);
-  border: 1px solid rgba(255, 185, 105, 0.48);
-  border-radius: 999px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition:
-    background-color 0.28s ease,
-    border-color 0.28s ease,
-    transform 0.28s ease,
-    box-shadow 0.28s ease;
-}
-
-.btc-vision-btn:hover {
-  background: rgba(255, 132, 36, 0.24);
-  border-color: #ffbe6b;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 28px rgba(255, 107, 26, 0.26);
-}
-
-.btc-btn-arrow {
-  display: inline-block;
-  font-size: 1.15em;
-  line-height: 1;
-  color: #ffbe6b;
-  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.btc-vision-btn:hover .btc-btn-arrow {
-  transform: translateX(6px);
-}
-
-@media (max-width: 768px) {
-  .btc-main-heading {
-    flex-direction: column;
-    align-items: center;
-    gap: 0.05em;
-    font-size: clamp(2.4rem, 11.5vw, 3.8rem);
+@media (max-width: 540px) {
+  .btc-seamless-bridge {
+    margin-top: -32vh;
   }
 
-  .btc-year-outline {
-    font-size: clamp(5.5rem, 28vw, 10rem);
-    letter-spacing: 0.12em;
+  .btc-change-word {
+    font-size: clamp(2.25rem, 13.2vw, 3.8rem);
   }
 
-  .btc-vision-btn {
-    padding: 0.82rem 1.5rem;
+  .btc-letter-slot {
+    font-variation-settings: 'wght' 800, 'wdth' 96;
   }
+}
+
+/* Reduced Motion */
+.btc-morph-section.is-reduced-motion .btc-prefix,
+.btc-morph-section.is-reduced-motion .btc-entry-fade,
+.btc-morph-section.is-reduced-motion .btc-letter-slot,
+.btc-morph-section.is-reduced-motion .btc-letter-hot,
+.btc-morph-section.is-reduced-motion .btc-flicker-glow {
+  opacity: 1;
+  transform: none;
+}
+
+.btc-morph-section.is-reduced-motion .btc-letter-cold,
+.btc-morph-section.is-reduced-motion .btc-flash-overlay {
+  opacity: 0;
+}
+
+.btc-morph-section.is-reduced-motion .btc-flicker-core {
+  animation: none;
+  opacity: 0.85;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .btc-vision-btn,
-  .btc-btn-arrow {
-    transition: none;
+  .btc-flicker-core {
+    animation: none;
   }
 }
