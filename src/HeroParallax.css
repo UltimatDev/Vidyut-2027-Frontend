@@ -7,7 +7,6 @@ body,
   width: 100%;
   background-color: #050101;
   overflow-x: clip;
-  scroll-behavior: smooth;
 }
 
 /* --- FRONTAGE FONT FACES --- */
@@ -36,7 +35,7 @@ body,
 .hero-scroll-runway {
   position: relative;
   width: 100%;
-  height: 175vh;
+  height: 155vh;
   margin: 0;
   padding: 0;
   background-color: transparent;
@@ -64,7 +63,7 @@ body,
   width: 100%;
   height: 100vh;
   height: 100dvh;
-  min-height: 560px;
+  min-height: 520px;
   overflow: hidden;
   user-select: none;
   pointer-events: none;
@@ -414,8 +413,9 @@ body,
   will-change: transform, opacity;
 }
 
+/* Aspect-ratio aware vertical anchor so windowed Chrome (wide + short) never collides with Theyyam's crown */
 .vidyut-poster-lockup {
-  margin-top: 11.5vh;
+  margin-top: clamp(72px, 10.5vh, 125px);
   width: 100%;
   padding: 0 4vw;
   box-sizing: border-box;
@@ -426,10 +426,10 @@ body,
 }
 
 .vidyut-top-subtitle {
-  margin: 0 0 1.4vh 0;
+  margin: 0 0 clamp(6px, 1.2vh, 16px) 0;
   max-width: 100%;
   font-family: 'Frontage Bold', sans-serif;
-  font-size: clamp(0.62rem, 1.35vw, 1.25rem);
+  font-size: clamp(0.62rem, min(1.25vw, 1.85vh), 1.2rem);
   font-weight: 700;
   letter-spacing: 0.38em;
   text-indent: 0.38em;
@@ -452,6 +452,7 @@ body,
   pointer-events: auto;
 }
 
+/* Constrained by both vw and vh so normal windowed Chrome & fullscreen Chrome look identical */
 .vidyut-main-title {
   position: relative;
   margin: 0;
@@ -460,7 +461,7 @@ body,
   justify-content: center;
   gap: 0.11em;
   font-family: 'Frontage Bold', sans-serif;
-  font-size: clamp(2.25rem, 11.8vw, 13.8rem);
+  font-size: clamp(2.25rem, min(10.6vw, 15.8vh), 12.6rem);
   font-weight: 700;
   line-height: 0.92;
   perspective: 900px;
@@ -616,7 +617,7 @@ body,
   align-items: center;
   justify-content: center;
   font-family: 'Frontage Bold', sans-serif;
-  font-size: clamp(1rem, 2.2vw, 2.15rem);
+  font-size: clamp(1rem, min(2.1vw, 3.1vh), 2.1rem);
   font-weight: 700;
   line-height: 1;
   color: #fff6e5;
@@ -628,7 +629,7 @@ body,
 
 .cylinder-char.orbit-dot {
   color: #ffb84d;
-  font-size: clamp(0.85rem, 1.8vw, 1.7rem);
+  font-size: clamp(0.85rem, min(1.7vw, 2.5vh), 1.65rem);
 }
 
 /* 5. Live Procedural Fire & Embers Canvas */
@@ -652,7 +653,7 @@ body,
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  padding-bottom: 9.5vh;
+  padding-bottom: clamp(54px, 8.8vh, 96px);
   box-sizing: border-box;
   opacity: 0;
   animation: awakenCountdownUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.68s forwards;
@@ -684,7 +685,7 @@ body,
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.78rem 1.5rem;
+  padding: 0.72rem 1.4rem;
   border-radius: 3px;
   cursor: default;
   background: linear-gradient(
@@ -770,8 +771,8 @@ body,
 .countdown-cell {
   position: relative;
   z-index: 1;
-  min-width: clamp(54px, 6.8vw, 90px);
-  padding: 0 0.6rem;
+  min-width: clamp(54px, 6.4vw, 86px);
+  padding: 0 0.55rem;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -782,7 +783,7 @@ body,
   position: relative;
   z-index: 1;
   width: 1px;
-  height: 32px;
+  height: 30px;
   background: linear-gradient(
     180deg,
     transparent 0%,
@@ -794,7 +795,7 @@ body,
 .countdown-value {
   font-family: 'Frontage Bold', sans-serif;
   font-variant-numeric: tabular-nums;
-  font-size: clamp(1.2rem, 2.4vw, 2.05rem);
+  font-size: clamp(1.15rem, min(2.2vw, 3.1vh), 2rem);
   font-weight: 700;
   line-height: 1;
   letter-spacing: 0.08em;
@@ -804,9 +805,9 @@ body,
 }
 
 .countdown-label {
-  margin-top: 0.4rem;
+  margin-top: 0.38rem;
   font-family: 'Frontage Regular', sans-serif;
-  font-size: 0.54rem;
+  font-size: 0.52rem;
   letter-spacing: 0.26em;
   text-indent: 0.26em;
   color: rgba(255, 185, 115, 0.82);
@@ -815,7 +816,7 @@ body,
 /* --- DELAYED ANIMATED "SCROLL" CUE AT BOTTOM --- */
 .hero-scroll-cue-wrapper {
   position: absolute;
-  bottom: 1.6vh;
+  bottom: 1.4vh;
   left: 50%;
   transform: translateX(-50%);
   z-index: 9;
@@ -827,7 +828,7 @@ body,
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.4rem;
   opacity: 0;
   animation: revealScrollCue 1s ease forwards 2.8s;
 }
@@ -854,7 +855,7 @@ body,
 .scroll-cue-track {
   position: relative;
   width: 1px;
-  height: 30px;
+  height: 26px;
   background: rgba(255, 185, 110, 0.18);
   overflow: hidden;
 }
@@ -902,7 +903,7 @@ body,
    ============================================================================ */
 @media (max-width: 768px) {
   .hero-scroll-runway {
-    height: 145vh;
+    height: 140vh;
   }
 
   .layer-heat-haze,
@@ -1031,25 +1032,4 @@ body,
     animation: none !important;
     opacity: 0.8;
   }
-}
-
-/* Remove `scroll-behavior: smooth` so Lenis + GSAP scrub don't fight native scrolling */
-html,
-body,
-#root {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  background-color: #050101;
-  overflow-x: clip;
-}
-
-/* Tighten runway from 185vh -> 145vh so there's no dead black scroll tail */
-.hero-scroll-runway {
-  position: relative;
-  width: 100%;
-  height: 145vh;
-  margin: 0;
-  padding: 0;
-  background-color: transparent;
 }
