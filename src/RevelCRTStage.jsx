@@ -19,7 +19,7 @@ export const TV_DIMENSIONS = {
   tiltY: 12,
   tiltX: 2,
   dockScale: 0.54,
-  heightStretch: 1.18, // > 1 stretches TV taller, < 1 makes it shorter
+  heightStretch: 1.18,
   dockOffsetX: -68,
   dockOffsetY: 0,
 };
@@ -101,6 +101,7 @@ function PerformerSilhouette({ index }) {
 
 export default function RevelCRTStage({
   droneSrc = "/drone_8s.mp4",
+  preloadedDroneUrl = null,
   loopSrc = "/loop_video.mp4",
   tvFrameSrc = oldTvFrameImg,
   lineup = DEFAULT_REVEL_LINEUP,
@@ -132,11 +133,17 @@ export default function RevelCRTStage({
 
   const [activeDayIdx, setActiveDayIdx] = useState(0);
   const [cueLabel, setCueLabel] = useState("SCROLL");
-  const [shouldLoadMedia, setShouldLoadMedia] = useState(false);
-  const [droneBlobUrl, setDroneBlobUrl] = useState(null);
+  const [shouldLoadMedia, setShouldLoadMedia] = useState(Boolean(preloadedDroneUrl));
+  const [droneBlobUrl, setDroneBlobUrl] = useState(preloadedDroneUrl);
 
-  // 1. Lazy-load media only when scrolling near this section
+  // 1. Adopt preloaded Blob URL from App.jsx immediately, or lazy-fetch if mounted standalone
   useEffect(() => {
+    if (preloadedDroneUrl) {
+      setDroneBlobUrl(preloadedDroneUrl);
+      setShouldLoadMedia(true);
+      return;
+    }
+
     const section = sectionRef.current;
     if (!section || shouldLoadMedia) return;
 
@@ -152,11 +159,11 @@ export default function RevelCRTStage({
 
     observer.observe(section);
     return () => observer.disconnect();
-  }, [shouldLoadMedia]);
+  }, [preloadedDroneUrl, shouldLoadMedia]);
 
-  // 2. Buffer drone video into memory once near viewport
+  // 2. Fallback fetch only if App.jsx didn't supply preloadedDroneUrl
   useEffect(() => {
-    if (!shouldLoadMedia || !droneSrc) return;
+    if (preloadedDroneUrl || !shouldLoadMedia || !droneSrc) return;
 
     let active = true;
     let createdUrl = null;
@@ -180,7 +187,7 @@ export default function RevelCRTStage({
       active = false;
       if (createdUrl) URL.revokeObjectURL(createdUrl);
     };
-  }, [shouldLoadMedia, droneSrc]);
+  }, [preloadedDroneUrl, shouldLoadMedia, droneSrc]);
 
   // 3. ScrollTrigger Timeline
   useEffect(() => {
@@ -224,7 +231,11 @@ export default function RevelCRTStage({
     let isInView = false;
 
     const syncFrame = () => {
-      if (isInView && !isSeeking && Math.abs(droneVideo.currentTime - targetTime) > 0.008) {
+      if (!isInView) {
+        rafId = null;
+        return;
+      }
+      if (!isSeeking && Math.abs(droneVideo.currentTime - targetTime) > 0.008) {
         isSeeking = true;
         if (typeof droneVideo.fastSeek === "function") {
           droneVideo.fastSeek(targetTime);
@@ -244,7 +255,9 @@ export default function RevelCRTStage({
     const visibilityObserver = new IntersectionObserver(
       (entries) => {
         isInView = entries.some((entry) => entry.isIntersecting);
-        if (!isInView && loopVideo && !loopVideo.paused) {
+        if (isInView && !rafId) {
+          rafId = requestAnimationFrame(syncFrame);
+        } else if (!isInView && loopVideo && !loopVideo.paused) {
           loopVideo.pause();
         }
       },
@@ -258,7 +271,9 @@ export default function RevelCRTStage({
       const duration = droneVideo.duration || 8;
       droneVideo.currentTime = 0.001;
 
-      rafId = requestAnimationFrame(syncFrame);
+      if (isInView && !rafId) {
+        rafId = requestAnimationFrame(syncFrame);
+      }
 
       mm.add(
         {
@@ -277,8 +292,12 @@ export default function RevelCRTStage({
             const rigWidth = rigRect.width || vw;
             const rigHeight = rigRect.height || vh;
 
-           const targetHoleW = rigWidth * (holeWidth / 100) * TV_DIMENSIONS.dockScale;
-           const targetHoleH = rigHeight * (holeHeight / 100) * TV_DIMENSIONS.dockScale * TV_DIMENSIONS.heightStretch;
+            const targetHoleW = rigWidth * (holeWidth / 100) * TV_DIMENSIONS.dockScale;
+            const targetHoleH =
+              rigHeight *
+              (holeHeight / 100) *
+              TV_DIMENSIONS.dockScale *
+              TV_DIMENSIONS.heightStretch;
 
             const targetTvWidth = targetHoleW / (holeWidth / 100);
             const targetTvHeight = targetHoleH / (holeHeight / 100);
@@ -1098,7 +1117,7 @@ export default function RevelCRTStage({
                 muted
                 loop
                 playsInline
-                preload="metadata"
+                preload="auto"
                 style={{
                   position: "absolute",
                   inset: 0,
@@ -1194,17 +1213,17 @@ export default function RevelCRTStage({
           <div
             ref={tvChassisRef}
             style={{
-  position: "absolute",
-  left: `${chassisLeftPct}%`,
-  top: `${chassisTopPct}%`,
-  width: `${chassisWidthPct}%`,
-  height: `${chassisHeightPct * TV_DIMENSIONS.heightStretch}%`,
-  transformStyle: "preserve-3d",
-  pointerEvents: "none",
-  zIndex: 30,
-  mixBlendMode: "normal",
-  opacity: 0,
-}}
+              position: "absolute",
+              left: `${chassisLeftPct}%`,
+              top: `${chassisTopPct}%`,
+              width: `${chassisWidthPct}%`,
+              height: `${chassisHeightPct * TV_DIMENSIONS.heightStretch}%`,
+              transformStyle: "preserve-3d",
+              pointerEvents: "none",
+              zIndex: 30,
+              mixBlendMode: "normal",
+              opacity: 0,
+            }}
           >
             {tvFrameSrc ? (
               <img
