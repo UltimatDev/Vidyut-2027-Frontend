@@ -1,10 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './RitualLoader.css';
 
-// Optional: import your Vidyut logo directly or pass via `logoSrc` prop
-// import defaultVidyutLogo from './assets/vidyut-logo.png';
-const defaultVidyutLogo = null;
-
 const AWAKENING_PHRASES = [
   'AWAKENING THE FLAME',
   'ALIGNING THE REALMS',
@@ -14,16 +10,58 @@ const AWAKENING_PHRASES = [
 
 const RitualLoader = ({
   isSceneReady = false,
-  logoSrc = defaultVidyutLogo,
+  logoSrc = null,
   onEnter,
 }) => {
   const [progress, setProgress] = useState(0);
   const [phraseIndex, setPhraseIndex] = useState(0);
+  const [logoReady, setLogoReady] = useState(!logoSrc);
+  const [logoFailed, setLogoFailed] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [isUnmounted, setIsUnmounted] = useState(false);
 
-  // Lock page scroll & force top position while loader is active
+  // Preload logoSrc and unblock even if browser doesn't fire onload for cached SVG
+  useEffect(() => {
+    if (!logoSrc) {
+      setLogoReady(true);
+      setLogoFailed(false);
+      return;
+    }
+
+    let cancelled = false;
+    setLogoReady(false);
+    setLogoFailed(false);
+
+    const img = new window.Image();
+    img.src = logoSrc;
+
+    const done = () => {
+      if (!cancelled) setLogoReady(true);
+    };
+
+    const fail = () => {
+      if (!cancelled) {
+        setLogoFailed(true);
+        setLogoReady(true);
+      }
+    };
+
+    if (img.complete) {
+      done();
+    } else {
+      img.onload = done;
+      img.onerror = fail;
+    }
+
+    const safety = setTimeout(done, 1200);
+    return () => {
+      cancelled = true;
+      clearTimeout(safety);
+    };
+  }, [logoSrc]);
+
+  // Lock scroll while loader is visible
   useEffect(() => {
     if (isUnmounted) return;
 
@@ -49,16 +87,15 @@ const RitualLoader = ({
     };
   }, [isUnmounted]);
 
-  // Smoothly track readiness from HeroParallax + downstream sections
+  const everythingReady = isSceneReady && logoReady;
+
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress((prev) => {
-        if (!isSceneReady) {
-          // Ease up to 92% while waiting for HeroParallax & other components to confirm ready
+        if (!everythingReady) {
           const next = prev + (92 - prev) * 0.08;
           return Math.min(92, Math.round(next * 10) / 10);
         }
-        // Once scene + downstream components report ready, finish smoothly to 100%
         if (prev < 100) {
           const next = Math.min(100, prev + 6);
           if (next >= 100) {
@@ -74,9 +111,8 @@ const RitualLoader = ({
     }, 55);
 
     return () => clearInterval(interval);
-  }, [isSceneReady]);
+  }, [everythingReady]);
 
-  // Cycle subtle awakening phrases while loading
   useEffect(() => {
     if (isUnlocked) return;
     const phraseTimer = setInterval(() => {
@@ -87,12 +123,8 @@ const RitualLoader = ({
 
   const handleEnterClick = () => {
     if (!isUnlocked || isExiting) return;
-
     setIsExiting(true);
-    // Notify App.jsx immediately so HeroParallax starts its drop + audio inside the click gesture
     if (onEnter) onEnter();
-
-    // Unmount loader DOM after exit transition finishes
     setTimeout(() => {
       setIsUnmounted(true);
     }, 650);
@@ -113,12 +145,9 @@ const RitualLoader = ({
         if (e.key === 'Enter' || e.key === ' ') handleEnterClick();
       }}
     >
-      {/* Subtle Ambient Light Core */}
       <div className="ophanim-ambient-core" />
 
-      {/* 3D Tilted Intersecting White Circular Strips ("Eye of an Angel" / Ophanim Gimbal) */}
       <div className="ophanim-gimbal-stage" aria-hidden="true">
-        {/* Outer Tilted Ring 1 */}
         <div className="ophanim-ring-plane plane-1">
           <svg className="ophanim-strip-svg" viewBox="0 0 400 400">
             <circle cx="200" cy="200" r="186" className="strip-hairline" />
@@ -127,7 +156,6 @@ const RitualLoader = ({
           </svg>
         </div>
 
-        {/* Counter-Tilted Ring 2 */}
         <div className="ophanim-ring-plane plane-2">
           <svg className="ophanim-strip-svg" viewBox="0 0 400 400">
             <circle cx="200" cy="200" r="160" className="strip-arc-medium" />
@@ -135,7 +163,6 @@ const RitualLoader = ({
           </svg>
         </div>
 
-        {/* Horizontal Equatorial Ring 3 */}
         <div className="ophanim-ring-plane plane-3">
           <svg className="ophanim-strip-svg" viewBox="0 0 400 400">
             <circle cx="200" cy="200" r="136" className="strip-arc-bright" />
@@ -143,13 +170,20 @@ const RitualLoader = ({
           </svg>
         </div>
 
-        {/* Inner Almond / Vesica Eye Frame + Glowing Central Vidyut Logo */}
         <div className="ophanim-eye-pupil">
           <div className="eye-halo-pulse" />
-          {logoSrc ? (
-            <img src={logoSrc} alt="Vidyut" className="ophanim-center-logo" />
+          {logoSrc && !logoFailed ? (
+            <img
+              src={logoSrc}
+              alt="Vidyut"
+              onLoad={() => setLogoReady(true)}
+              onError={() => {
+                setLogoFailed(true);
+                setLogoReady(true);
+              }}
+              className="ophanim-center-logo"
+            />
           ) : (
-            /* Minimal Geometric Crown-Eye Crest Fallback */
             <svg className="ophanim-fallback-crest" viewBox="0 0 160 160" fill="none">
               <path
                 d="M14 80 Q80 22 146 80 Q80 138 14 80 Z"
@@ -172,7 +206,6 @@ const RitualLoader = ({
         </div>
       </div>
 
-      {/* Bottom Typography: "AWAKENING..." -> "CLICK TO ENTER" */}
       <div className="ophanim-status-block">
         {!isUnlocked ? (
           <>

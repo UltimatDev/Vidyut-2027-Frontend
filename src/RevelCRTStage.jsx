@@ -2,8 +2,46 @@ import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { DEFAULT_REVEL_LINEUP } from "./revelLineupConfig";
+import oldTvFrameImg from "./old-tv-frame.png";
 
 gsap.registerPlugin(ScrollTrigger);
+
+// ============================================================================
+// DIMENSION & LAYOUT CONFIG
+// ============================================================================
+export const TV_DIMENSIONS = {
+  desktopWidth: "min(38vw, 490px)",
+  mobileWidth: "min(80vw, 330px)",
+  aspectRatio: "1 / 1",
+  desktopLeft: "5vw",
+  desktopTop: "50%",
+  mobileTop: "11vh",
+  tiltY: 12,
+  tiltX: 2,
+  dockScale: 0.54,
+  heightStretch: 1.18, // > 1 stretches TV taller, < 1 makes it shorter
+  dockOffsetX: -68,
+  dockOffsetY: 0,
+};
+
+export const SCREEN_HOLE_DIMENSIONS = {
+  left: 8.7,
+  top: 32.4,
+  width: 57.8,
+  height: 47.4,
+  radius: 26,
+};
+
+export const LINEUP_CARD_DIMENSIONS = {
+  panelWidth: "min(46vw, 620px)",
+  stageHeight: "clamp(300px, 46vh, 420px)",
+  cardWidth: "clamp(190px, 17vw, 240px)",
+  mobileCardWidth: "152px",
+  mobileStageHeight: "225px",
+  cardSpreadPercent: 74,
+  cardDeckScale: 0.97,
+};
+// ============================================================================
 
 const STACK_PATTERN = ["o", "f", "f", "o", "f", "o", "f", "f", "o", "f", "o", "f", "f", "o"];
 const STACK_ROWS = STACK_PATTERN.map((style, i, arr) => {
@@ -26,12 +64,12 @@ function PerformerSilhouette({ index }) {
       fill="none"
       aria-hidden="true"
       style={{
-        width: "82%",
-        height: "76%",
+        width: "80%",
+        height: "72%",
         position: "absolute",
         bottom: 0,
-        right: "2%",
-        opacity: 0.42,
+        right: "3%",
+        opacity: 0.38,
         pointerEvents: "none",
       }}
     >
@@ -64,25 +102,25 @@ function PerformerSilhouette({ index }) {
 export default function RevelCRTStage({
   droneSrc = "/drone_8s.mp4",
   loopSrc = "/loop_video.mp4",
+  tvFrameSrc = oldTvFrameImg,
   lineup = DEFAULT_REVEL_LINEUP,
-  holeLeft = 4,
-  holeTop = 13,
-  holeWidth = 72,
-  holeHeight = 77,
+  holeLeft = SCREEN_HOLE_DIMENSIONS.left,
+  holeTop = SCREEN_HOLE_DIMENSIONS.top,
+  holeWidth = SCREEN_HOLE_DIMENSIONS.width,
+  holeHeight = SCREEN_HOLE_DIMENSIONS.height,
   focusX = 50,
   focusY = 50,
-  showCustomizeButton = false,
 }) {
   const sectionRef = useRef(null);
   const tvRigRef = useRef(null);
   const tvScreenSlotRef = useRef(null);
+  const tvChassisRef = useRef(null);
   const droneVideoRef = useRef(null);
   const loopVideoRef = useRef(null);
   const crtStaticRef = useRef(null);
   const crtScanlinesRef = useRef(null);
   const stageCardsRef = useRef(null);
   const scrollCueRef = useRef(null);
-  const cueTextRef = useRef(null);
 
   const stackLayerRef = useRef(null);
   const stackTrackRefs = useRef([]);
@@ -96,21 +134,8 @@ export default function RevelCRTStage({
   const [cueLabel, setCueLabel] = useState("SCROLL");
   const [shouldLoadMedia, setShouldLoadMedia] = useState(false);
   const [droneBlobUrl, setDroneBlobUrl] = useState(null);
-  const [activeDroneSrc, setActiveDroneSrc] = useState(droneSrc);
-  const [activeLoopSrc, setActiveLoopSrc] = useState(loopSrc);
-  const [customTvPng, setCustomTvPng] = useState(null);
-  const [isReady, setIsReady] = useState(false);
-  const [showDevBar, setShowDevBar] = useState(false);
 
-  useEffect(() => {
-    setActiveDroneSrc(droneSrc);
-  }, [droneSrc]);
-
-  useEffect(() => {
-    setActiveLoopSrc(loopSrc);
-  }, [loopSrc]);
-
-  // 1. Defer media fetch until near viewport
+  // 1. Lazy-load media only when scrolling near this section
   useEffect(() => {
     const section = sectionRef.current;
     if (!section || shouldLoadMedia) return;
@@ -129,15 +154,14 @@ export default function RevelCRTStage({
     return () => observer.disconnect();
   }, [shouldLoadMedia]);
 
-  // 2. Fetch drone video into RAM Blob once near viewport
+  // 2. Buffer drone video into memory once near viewport
   useEffect(() => {
-    if (!shouldLoadMedia || !activeDroneSrc) return;
+    if (!shouldLoadMedia || !droneSrc) return;
 
     let active = true;
     let createdUrl = null;
-    setIsReady(false);
 
-    fetch(activeDroneSrc)
+    fetch(droneSrc)
       .then((res) => {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return res.blob();
@@ -156,45 +180,14 @@ export default function RevelCRTStage({
       active = false;
       if (createdUrl) URL.revokeObjectURL(createdUrl);
     };
-  }, [shouldLoadMedia, activeDroneSrc]);
+  }, [shouldLoadMedia, droneSrc]);
 
-  const handleDroneUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setShouldLoadMedia(true);
-    setIsReady(false);
-    const url = URL.createObjectURL(file);
-    setDroneBlobUrl((prev) => {
-      if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
-      return url;
-    });
-  };
-
-  const handleLoopUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setActiveLoopSrc((prev) => {
-      if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
-      return url;
-    });
-  };
-
-  const handleTvPngUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setCustomTvPng((prev) => {
-      if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
-      return url;
-    });
-  };
-
-  // 3. ScrollTrigger & Frame-Guarded Scrubbing Timeline
+  // 3. ScrollTrigger Timeline
   useEffect(() => {
     const section = sectionRef.current;
     const tvRig = tvRigRef.current;
     const tvSlot = tvScreenSlotRef.current;
+    const tvChassis = tvChassisRef.current;
     const droneVideo = droneVideoRef.current;
     const loopVideo = loopVideoRef.current;
     const crtStatic = crtStaticRef.current;
@@ -213,6 +206,7 @@ export default function RevelCRTStage({
       !section ||
       !tvRig ||
       !tvSlot ||
+      !tvChassis ||
       !droneVideo ||
       !loopVideo ||
       !multiplyLayer ||
@@ -230,7 +224,7 @@ export default function RevelCRTStage({
     let isInView = false;
 
     const syncFrame = () => {
-      if (isInView && !isSeeking && Math.abs(droneVideo.currentTime - targetTime) > 0.015) {
+      if (isInView && !isSeeking && Math.abs(droneVideo.currentTime - targetTime) > 0.008) {
         isSeeking = true;
         if (typeof droneVideo.fastSeek === "function") {
           droneVideo.fastSeek(targetTime);
@@ -263,7 +257,6 @@ export default function RevelCRTStage({
     const buildTimeline = () => {
       const duration = droneVideo.duration || 8;
       droneVideo.currentTime = 0.001;
-      setIsReady(true);
 
       rafId = requestAnimationFrame(syncFrame);
 
@@ -280,18 +273,19 @@ export default function RevelCRTStage({
           const getDockedTarget = () => {
             const vw = window.innerWidth;
             const vh = window.innerHeight;
+            const rigRect = tvRig.getBoundingClientRect();
+            const rigWidth = rigRect.width || vw;
+            const rigHeight = rigRect.height || vh;
 
-            const targetTvWidth = isMobile
-              ? Math.min(vw * 0.82, 360)
-              : Math.min(vw * 0.43, 620);
-            const targetTvHeight = targetTvWidth / 1.25;
+           const targetHoleW = rigWidth * (holeWidth / 100) * TV_DIMENSIONS.dockScale;
+           const targetHoleH = rigHeight * (holeHeight / 100) * TV_DIMENSIONS.dockScale * TV_DIMENSIONS.heightStretch;
 
-            const targetHoleW = targetTvWidth * (holeWidth / 100);
-            const targetHoleH = targetTvHeight * (holeHeight / 100);
+            const targetTvWidth = targetHoleW / (holeWidth / 100);
+            const targetTvHeight = targetHoleH / (holeHeight / 100);
 
-            const targetTvLeft = isMobile ? (vw - targetTvWidth) / 2 : vw * 0.045;
+            const targetTvLeft = isMobile ? (vw - targetTvWidth) / 2 : vw * 0.05;
             const targetTvTop = isMobile
-              ? Math.max(vh * 0.09, 66)
+              ? Math.max(vh * 0.09, 64)
               : (vh - targetTvHeight) / 2;
 
             const targetHoleCenterX =
@@ -300,12 +294,12 @@ export default function RevelCRTStage({
               targetTvTop + targetTvHeight * (holeTop / 100) + targetHoleH / 2;
 
             return {
-              scaleX: targetHoleW / vw,
-              scaleY: targetHoleH / vh,
-              x: targetHoleCenterX - vw / 2,
-              y: targetHoleCenterY - vh / 2,
-              rotateY: isMobile ? 6 : 15,
-              rotateX: isMobile ? 3 : 3,
+              scaleX: targetHoleW / rigWidth,
+              scaleY: targetHoleH / rigHeight,
+              x: targetHoleCenterX - vw / 2 + TV_DIMENSIONS.dockOffsetX,
+              y: targetHoleCenterY - vh / 2 + TV_DIMENSIONS.dockOffsetY,
+              rotateY: isMobile ? 5 : TV_DIMENSIONS.tiltY,
+              rotateX: isMobile ? 2 : TV_DIMENSIONS.tiltX,
             };
           };
 
@@ -318,10 +312,10 @@ export default function RevelCRTStage({
 
             gsap.fromTo(
               crtStatic,
-              { opacity: 0.9 },
+              { opacity: 0.85 },
               { opacity: 0.08, duration: 0.35, ease: "power2.out" }
             );
-            gsap.to(loopVideo, { opacity: 1, duration: 0.2, ease: "power1.out" });
+            gsap.to(loopVideo, { opacity: 1, duration: 0.25, ease: "power1.out" });
           };
 
           const exitTvMode = () => {
@@ -330,12 +324,12 @@ export default function RevelCRTStage({
             gsap.killTweensOf([loopVideo, crtStatic]);
             gsap.fromTo(
               crtStatic,
-              { opacity: 0.6 },
+              { opacity: 0.55 },
               { opacity: 0, duration: 0.2, ease: "power2.out" }
             );
             gsap.to(loopVideo, {
               opacity: 0,
-              duration: 0.18,
+              duration: 0.2,
               onComplete: () => {
                 if (!inTvMode) loopVideo.pause();
               },
@@ -345,21 +339,23 @@ export default function RevelCRTStage({
           gsap.set(tvRig, {
             x: 0,
             y: 0,
+            opacity: 1,
             scaleX: 1,
             scaleY: 1,
             rotateY: 0,
             rotateX: 0,
             rotateZ: 0,
           });
+          gsap.set(tvChassis, { opacity: 0 });
           gsap.set(tvSlot, { borderRadius: "0px" });
           gsap.set(crtScanlines, { opacity: 0 });
           gsap.set(multiplyLayer, { autoAlpha: 1 });
           gsap.set(lettersContainer, { scale: 1, transformOrigin: "50% 72%" });
-          gsap.set(glowLayer, { autoAlpha: 0 });
+          gsap.set(glowLayer, { autoAlpha: 1 });
           gsap.set(glowContainer, { scale: 1, transformOrigin: "50% 72%" });
           if (scrollCue) gsap.set(scrollCue, { autoAlpha: 0.85, y: 0 });
 
-          gsap.set(stackLayer, { autoAlpha: 0 });
+          gsap.set(stackLayer, { autoAlpha: 0, y: 0 });
           stackTracks.forEach((track, i) => {
             if (!track) return;
             const row = STACK_ROWS[i];
@@ -375,11 +371,12 @@ export default function RevelCRTStage({
             );
           });
 
-          const yDirections = [-55, 55, -55, 55, -55];
+          const yDirections = [-48, 48, -48, 48, -48];
           chars.forEach((el, index) => {
             if (el) {
               gsap.set(el, {
                 y: `${yDirections[index]}vh`,
+                scale: 0.92,
                 opacity: 0,
               });
             }
@@ -393,18 +390,18 @@ export default function RevelCRTStage({
             scrollTrigger: {
               trigger: section,
               start: "top top",
-              end: isMobile ? "+=500%" : "+=560%",
+              end: isMobile ? "+=520%" : "+=580%",
               pin: true,
-              scrub: 0.45,
+              scrub: 0.35,
               anticipatePin: 1,
               invalidateOnRefresh: true,
               onUpdate: (self) => {
                 setCueLabel((prev) => {
-                  const next = self.progress < 0.22 ? "SCROLL" : "KEEP SCROLLING";
+                  const next = self.progress < 0.18 ? "SCROLL" : "KEEP SCROLLING";
                   return prev === next ? prev : next;
                 });
 
-                if (self.progress > 0.9) {
+                if (self.progress >= 0.62) {
                   enterTvMode();
                 } else {
                   exitTvMode();
@@ -413,111 +410,83 @@ export default function RevelCRTStage({
             },
           });
 
-          // STEP 1: Letters lock into REVEL over warm ember backdrop
+          // 1. Staggered REVEL entry
           chars.forEach((el, index) => {
             if (el) {
               tl.to(
                 el,
                 {
                   y: "0vh",
+                  scale: 1,
                   opacity: 1,
-                  ease: "power3.out",
-                  duration: 0.55,
+                  ease: "power2.out",
+                  duration: 0.65,
                 },
-                index * 0.055
+                index * 0.09
               );
             }
           });
 
-          // STEP 2: Outline fades in crisply as zoom begins
-          tl.addLabel("assembleDone");
-          tl.to(
-            glowLayer,
-            {
-              autoAlpha: 1,
-              duration: 0.22,
-              ease: "power2.out",
-            },
-            "assembleDone"
-          );
-
-          // STEP 3: Zoom straight through REVEL into fullscreen drone video
+          // 2. Zoom through REVEL into drone shot
           tl.addLabel("zoomThrough");
           tl.to(
             lettersContainer,
             {
               scale: isMobile ? 55 : 75,
               ease: "expo.in",
-              duration: 0.95,
+              duration: 0.9,
             },
             "zoomThrough"
           );
-
           tl.to(
             glowContainer,
             {
               scale: isMobile ? 55 : 75,
               ease: "expo.in",
-              duration: 0.95,
+              duration: 0.9,
             },
             "zoomThrough"
           );
-
           tl.to(
             glowLayer,
             {
               autoAlpha: 0,
-              duration: 0.25,
-              ease: "power1.in",
+              duration: 0.35,
+              ease: "power1.out",
             },
-            "zoomThrough+=0.55"
+            "zoomThrough+=0.35"
           );
-
-          tl.to(
-            playhead,
-            {
-              time: 1.4,
-              ease: "sine.out",
-              duration: 0.95,
-              onUpdate: () => {
-                targetTime = playhead.time;
-              },
-            },
-            "zoomThrough"
-          );
-
           tl.to(
             droneVideo,
             {
               filter: "brightness(1) contrast(1) saturate(1)",
-              duration: 0.45,
+              duration: 0.55,
+              ease: "power1.out",
+            },
+            "zoomThrough+=0.2"
+          );
+          tl.to(
+            multiplyLayer,
+            {
+              autoAlpha: 0,
+              duration: 0.35,
               ease: "power1.out",
             },
             "zoomThrough+=0.45"
           );
 
-          tl.to(
-            multiplyLayer,
-            {
-              autoAlpha: 0,
-              duration: 0.2,
-              ease: "power1.out",
-            },
-            "zoomThrough+=0.75"
-          );
-
-          // STEP 4: Fullscreen Drone Dive (subtle scroll cue remains visible during drone scrub)
+          // 3. Continuous drone scrub flowing directly into the TV pull-back
           tl.to(
             playhead,
             {
-              time: Math.max(0, duration - 0.05),
+              time: Math.max(0, duration - 0.02),
               ease: "none",
-              duration: 2.9,
+              duration: 3.4,
               onUpdate: () => {
                 targetTime = playhead.time;
               },
             },
-            "zoomThrough+=0.75"
+            "zoomThrough+=0.15"
           );
 
           if (scrollCue) {
@@ -529,11 +498,21 @@ export default function RevelCRTStage({
                 duration: 0.3,
                 ease: "power2.in",
               },
-              "pullback-=0.15"
+              "pullback-=0.2"
             );
           }
 
-          // STEP 5: Pull Back into 3D CRT TV + Lineup Deck
+          // 4. Pull back into TV + reveal right-side lineup cards + play loop video
+          tl.addLabel("pullback");
+          tl.to(
+            tvChassis,
+            {
+              opacity: 1,
+              duration: 0.45,
+              ease: "power2.out",
+            },
+            "pullback"
+          );
           tl.to(
             tvRig,
             {
@@ -544,22 +523,20 @@ export default function RevelCRTStage({
               rotateY: () => getDockedTarget().rotateY,
               rotateX: () => getDockedTarget().rotateX,
               rotateZ: -1,
-              ease: "power3.inOut",
-              duration: 1.55,
+              ease: "power2.inOut",
+              duration: 1.4,
             },
             "pullback"
           );
-
           tl.to(
             tvSlot,
             {
-              borderRadius: isMobile ? "28px" : "38px",
-              ease: "power3.inOut",
-              duration: 1.55,
+              borderRadius: `${SCREEN_HOLE_DIMENSIONS.radius}px`,
+              ease: "power2.inOut",
+              duration: 1.4,
             },
             "pullback"
           );
-
           tl.to(
             crtScanlines,
             {
@@ -569,17 +546,15 @@ export default function RevelCRTStage({
             },
             "pullback+=0.25"
           );
-
           tl.to(
             stackLayer,
             {
               autoAlpha: 1,
-              duration: 1.1,
+              duration: 1.0,
               ease: "power2.out",
             },
             "pullback+=0.2"
           );
-
           tl.fromTo(
             stageCards,
             {
@@ -594,10 +569,11 @@ export default function RevelCRTStage({
               ease: "power3.out",
               duration: 0.85,
             },
-            "pullback+=0.5"
+            "pullback+=0.45"
           );
 
-          tl.to({}, { duration: 0.6 });
+          // 5. Hold docked in TV + lineup view cleanly until section unpins
+          tl.to({}, { duration: 1.6 });
         }
       );
 
@@ -658,7 +634,6 @@ export default function RevelCRTStage({
           50% { opacity: 0.9; transform: scaleY(1); }
         }
 
-        /* Subtle warm ember backdrop so the REVEL letters stand out immediately */
         .revel-ember-backdrop {
           position: absolute;
           inset: 0;
@@ -679,7 +654,6 @@ export default function RevelCRTStage({
           pointer-events: none;
         }
 
-        /* Minimal hairline scroll cue used from REVEL entry through the drone dive */
         .revel-scroll-cue {
           position: absolute;
           bottom: 24px;
@@ -731,37 +705,13 @@ export default function RevelCRTStage({
         }
 
         .revel-glow-layer {
-          filter:
-            drop-shadow(0 0 8px rgba(255, 255, 255, 0.7))
-            drop-shadow(0 0 22px rgba(245, 158, 11, 0.45));
+          filter: drop-shadow(0 0 12px rgba(251, 191, 36, 0.35));
         }
 
         .revel-glow-char {
-          position: relative;
           display: inline-block;
           color: transparent;
-          -webkit-text-stroke: 2.5px #ffffff;
-        }
-
-        .revel-glow-char::before,
-        .revel-glow-char::after {
-          content: attr(data-char);
-          position: absolute;
-          left: 0;
-          top: 0;
-          color: transparent;
-          mix-blend-mode: screen;
-          pointer-events: none;
-        }
-
-        .revel-glow-char::before {
-          -webkit-text-stroke: 2px #00e5ff;
-          transform: translate(-0.015em, -0.008em);
-        }
-
-        .revel-glow-char::after {
-          -webkit-text-stroke: 2px #ff2d95;
-          transform: translate(0.015em, 0.008em);
+          -webkit-text-stroke: 2px rgba(255, 255, 255, 0.92);
         }
 
         .revel-stack-layer {
@@ -814,26 +764,25 @@ export default function RevelCRTStage({
           position: absolute;
           inset: 0;
           background:
-            linear-gradient(90deg, rgba(3,3,5,0.1) 0%, rgba(3,3,5,0.1) 40%, rgba(3,3,5,0.68) 62%, rgba(3,3,5,0.82) 100%);
+            linear-gradient(90deg, rgba(3,3,5,0.12) 0%, rgba(3,3,5,0.12) 42%, rgba(3,3,5,0.72) 62%, rgba(3,3,5,0.85) 100%);
           box-shadow: inset 0 0 16vh rgba(3, 3, 5, 0.9);
         }
 
         @media (max-width: 768px) {
           .revel-stack-dim {
             background:
-              linear-gradient(180deg, rgba(3,3,5,0.1) 0%, rgba(3,3,5,0.1) 42%, rgba(3,3,5,0.85) 100%);
+              linear-gradient(180deg, rgba(3,3,5,0.12) 0%, rgba(3,3,5,0.12) 44%, rgba(3,3,5,0.86) 100%);
           }
         }
 
         .revel-crt-scanlines {
-          background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.42) 50%),
-                      linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.015), rgba(0, 0, 255, 0.04));
-          background-size: 100% 4px, 6px 100%;
+          background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.38) 50%);
+          background-size: 100% 4px;
         }
 
         .revel-crt-vignette {
-          box-shadow: inset 0 0 65px rgba(0,0,0,0.92), inset 0 0 20px rgba(0,0,0,0.75);
-          background: radial-gradient(circle at 30% 25%, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0) 45%);
+          box-shadow: inset 0 0 55px rgba(0,0,0,0.88), inset 0 0 18px rgba(0,0,0,0.65);
+          background: radial-gradient(circle at 30% 25%, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 45%);
         }
 
         .revel-crt-static {
@@ -847,8 +796,9 @@ export default function RevelCRTStage({
           position: absolute;
           right: 4.5vw;
           top: 50%;
-          transform: translateY(-50%);
-          width: min(44vw, 600px);
+          transform: translateY(-50%) scale(${LINEUP_CARD_DIMENSIONS.cardDeckScale});
+          transform-origin: center right;
+          width: ${LINEUP_CARD_DIMENSIONS.panelWidth};
           opacity: 0;
           visibility: hidden;
           z-index: 30;
@@ -861,7 +811,7 @@ export default function RevelCRTStage({
         .revel-deck-stage {
           position: relative;
           width: 100%;
-          height: clamp(320px, 50vh, 450px);
+          height: ${LINEUP_CARD_DIMENSIONS.stageHeight};
           display: flex;
           align-items: center;
           justify-content: center;
@@ -869,7 +819,7 @@ export default function RevelCRTStage({
 
         .revel-lineup-card {
           position: absolute;
-          width: clamp(200px, 19vw, 260px);
+          width: ${LINEUP_CARD_DIMENSIONS.cardWidth};
           height: 100%;
           border-radius: 16px;
           overflow: hidden;
@@ -880,24 +830,24 @@ export default function RevelCRTStage({
             box-shadow 0.45s ease,
             border-color 0.45s ease;
           background:
-            radial-gradient(circle at 50% 22%, rgba(245, 158, 11, 0.24) 0%, transparent 55%),
-            radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px),
+            radial-gradient(circle at 50% 22%, rgba(245, 158, 11, 0.22) 0%, transparent 55%),
+            radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
             linear-gradient(165deg, #b91c1c 0%, #6b0913 55%, #1d0306 100%);
           background-size: 100% 100%, 10px 10px, 100% 100%;
-          border: 1px solid rgba(251, 191, 36, 0.28);
-          box-shadow: 0 24px 50px rgba(0, 0, 0, 0.78);
+          border: 1px solid rgba(251, 191, 36, 0.25);
+          box-shadow: 0 22px 46px rgba(0, 0, 0, 0.8);
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          padding: 18px 18px 20px;
+          padding: 16px 16px 18px;
           user-select: none;
         }
 
         .revel-lineup-card.is-active {
-          border-color: rgba(253, 224, 71, 0.75);
+          border-color: rgba(253, 224, 71, 0.72);
           box-shadow:
-            0 30px 65px rgba(0, 0, 0, 0.9),
-            0 0 36px rgba(220, 38, 38, 0.45);
+            0 28px 60px rgba(0, 0, 0, 0.92),
+            0 0 32px rgba(220, 38, 38, 0.4);
         }
 
         .revel-card-top {
@@ -908,9 +858,9 @@ export default function RevelCRTStage({
 
         .revel-card-day-tag {
           font-family: 'Oswald', sans-serif;
-          font-size: 0.78rem;
+          font-size: 0.74rem;
           font-weight: 700;
-          letter-spacing: 0.22em;
+          letter-spacing: 0.2em;
           color: #fde68a;
           text-transform: uppercase;
           margin-bottom: 4px;
@@ -918,9 +868,9 @@ export default function RevelCRTStage({
 
         .revel-card-title {
           font-family: 'Oswald', sans-serif;
-          font-size: clamp(1.45rem, 2.1vw, 2.05rem);
+          font-size: clamp(1.35rem, 1.9vw, 1.9rem);
           font-weight: 700;
-          line-height: 1.02;
+          line-height: 1.04;
           letter-spacing: 0.04em;
           color: #fffbeb;
           text-transform: uppercase;
@@ -945,7 +895,7 @@ export default function RevelCRTStage({
 
         .revel-card-date-num {
           font-family: 'Oswald', sans-serif;
-          font-size: clamp(2.1rem, 3vw, 2.85rem);
+          font-size: clamp(1.95rem, 2.7vw, 2.6rem);
           font-weight: 700;
           color: #fef3c7;
         }
@@ -954,7 +904,7 @@ export default function RevelCRTStage({
           writing-mode: vertical-rl;
           transform: rotate(180deg);
           font-family: 'Oswald', sans-serif;
-          font-size: 0.65rem;
+          font-size: 0.62rem;
           font-weight: 700;
           letter-spacing: 0.16em;
           color: rgba(254, 243, 199, 0.85);
@@ -962,27 +912,26 @@ export default function RevelCRTStage({
         }
 
         .revel-card-badge {
-          font-size: 0.62rem;
+          font-size: 0.6rem;
           font-weight: 700;
           letter-spacing: 0.14em;
           text-transform: uppercase;
           color: #fde68a;
-          background: rgba(0, 0, 0, 0.48);
-          border: 1px solid rgba(253, 224, 71, 0.28);
+          background: rgba(0, 0, 0, 0.5);
+          border: 1px solid rgba(253, 224, 71, 0.25);
           padding: 4px 8px;
           border-radius: 999px;
-          backdrop-filter: blur(4px);
         }
 
         .revel-deck-nav-btn {
           position: absolute;
           top: 50%;
           transform: translateY(-50%);
-          z-index: 10;
+          z-index: 12;
           width: 34px;
           height: 34px;
           border-radius: 50%;
-          background: rgba(12, 4, 6, 0.72);
+          background: rgba(12, 4, 6, 0.82);
           border: 1px solid rgba(253, 224, 71, 0.35);
           color: #fef3c7;
           display: flex;
@@ -990,13 +939,12 @@ export default function RevelCRTStage({
           justify-content: center;
           cursor: pointer;
           font-size: 1rem;
-          backdrop-filter: blur(8px);
           transition: background 0.2s ease, transform 0.2s ease;
         }
 
         .revel-deck-nav-btn:hover {
-          background: rgba(185, 28, 28, 0.85);
-          transform: translateY(-50%) scale(1.08);
+          background: rgba(185, 28, 28, 0.9);
+          transform: translateY(-50%) scale(1.06);
         }
 
         .revel-day-pills {
@@ -1016,7 +964,7 @@ export default function RevelCRTStage({
           text-transform: uppercase;
           cursor: pointer;
           border: 1px solid rgba(253, 224, 71, 0.32);
-          background: rgba(15, 5, 7, 0.78);
+          background: rgba(15, 5, 7, 0.82);
           color: #e7e5e4;
           transition: all 0.25s ease;
         }
@@ -1025,7 +973,7 @@ export default function RevelCRTStage({
           background: #fef3c7;
           color: #1c0407;
           border-color: #fef3c7;
-          box-shadow: 0 0 20px rgba(253, 224, 71, 0.38);
+          box-shadow: 0 0 18px rgba(253, 224, 71, 0.32);
         }
 
         @media (max-width: 768px) {
@@ -1034,92 +982,31 @@ export default function RevelCRTStage({
             left: 4vw;
             top: auto;
             bottom: 3.2vh;
-            transform: none;
+            transform: scale(${LINEUP_CARD_DIMENSIONS.cardDeckScale});
+            transform-origin: bottom center;
             width: 92vw;
             gap: 12px;
           }
 
           .revel-deck-stage {
-            height: 235px;
+            height: ${LINEUP_CARD_DIMENSIONS.mobileStageHeight};
           }
 
           .revel-lineup-card {
-            width: 162px;
+            width: ${LINEUP_CARD_DIMENSIONS.mobileCardWidth};
             padding: 12px 12px 14px;
             border-radius: 13px;
           }
 
           .revel-card-title {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
           }
 
           .revel-card-date-num {
-            font-size: 1.7rem;
+            font-size: 1.65rem;
           }
         }
       `}</style>
-
-      {showCustomizeButton && (
-        <>
-          <button
-            type="button"
-            onClick={() => setShowDevBar((s) => !s)}
-            style={{
-              position: "fixed",
-              top: 16,
-              right: 16,
-              zIndex: 9999,
-              background: "rgba(255,255,255,0.08)",
-              color: "#fff",
-              border: "1px solid rgba(255,255,255,0.18)",
-              padding: "6px 14px",
-              borderRadius: "999px",
-              fontSize: "0.75rem",
-              cursor: "pointer",
-              backdropFilter: "blur(6px)",
-            }}
-          >
-            {showDevBar ? "Close Options" : "Customize Media"}
-          </button>
-
-          {showDevBar && (
-            <div
-              style={{
-                position: "fixed",
-                top: 60,
-                right: 16,
-                zIndex: 9999,
-                background: "rgba(12, 12, 14, 0.92)",
-                backdropFilter: "blur(12px)",
-                padding: "12px 16px",
-                borderRadius: "14px",
-                border: "1px solid rgba(255,255,255,0.15)",
-                fontSize: "11px",
-                display: "flex",
-                flexDirection: "column",
-                gap: "10px",
-                boxShadow: "0 12px 35px rgba(0,0,0,0.7)",
-              }}
-            >
-              <label style={{ cursor: "pointer", background: "#f59e0b", color: "#000", fontWeight: 700, padding: "5px 10px", borderRadius: "6px", textAlign: "center" }}>
-                Upload Drone MP4
-                <input type="file" accept="video/*" onChange={handleDroneUpload} style={{ display: "none" }} />
-              </label>
-              <label style={{ cursor: "pointer", background: "#38bdf8", color: "#000", fontWeight: 700, padding: "5px 10px", borderRadius: "6px", textAlign: "center" }}>
-                Upload Loop MP4
-                <input type="file" accept="video/*" onChange={handleLoopUpload} style={{ display: "none" }} />
-              </label>
-              <label style={{ cursor: "pointer", background: "#a855f7", color: "#fff", fontWeight: 700, padding: "5px 10px", borderRadius: "6px", textAlign: "center" }}>
-                Upload TV PNG
-                <input type="file" accept="image/png,image/webp" onChange={handleTvPngUpload} style={{ display: "none" }} />
-              </label>
-              <span style={{ color: isReady ? "#4ade80" : "#fbbf24", fontWeight: 700, textAlign: "center" }}>
-                {isReady ? "● Ready" : shouldLoadMedia ? "◌ Buffering" : "○ Idle"}
-              </span>
-            </div>
-          )}
-        </>
-      )}
 
       <section
         ref={sectionRef}
@@ -1169,7 +1056,7 @@ export default function RevelCRTStage({
             height: "100%",
             transformStyle: "preserve-3d",
             transformOrigin: "50% 50%",
-            willChange: "transform",
+            willChange: "transform, opacity",
             zIndex: 20,
           }}
         >
@@ -1182,7 +1069,7 @@ export default function RevelCRTStage({
               height: "100%",
               overflow: "hidden",
               backgroundColor: "#000",
-              zIndex: 25,
+              zIndex: 15,
             }}
           >
             {droneBlobUrl && (
@@ -1204,10 +1091,10 @@ export default function RevelCRTStage({
               />
             )}
 
-            {shouldLoadMedia && activeLoopSrc && (
+            {shouldLoadMedia && loopSrc && (
               <video
                 ref={loopVideoRef}
-                src={activeLoopSrc}
+                src={loopSrc}
                 muted
                 loop
                 playsInline
@@ -1290,13 +1177,13 @@ export default function RevelCRTStage({
                 alignItems: "center",
                 justifyContent: "center",
                 zIndex: 11,
-                opacity: 0,
+                opacity: 1,
                 pointerEvents: "none",
               }}
             >
               <div ref={glowContainerRef} className="revel-letters-box">
                 {["R", "E", "V", "E", "L"].map((char, i) => (
-                  <span key={i} className="revel-glow-char" data-char={char}>
+                  <span key={i} className="revel-glow-char">
                     {char}
                   </span>
                 ))}
@@ -1305,141 +1192,39 @@ export default function RevelCRTStage({
           </div>
 
           <div
+            ref={tvChassisRef}
             style={{
-              position: "absolute",
-              left: `${chassisLeftPct}%`,
-              top: `${chassisTopPct}%`,
-              width: `${chassisWidthPct}%`,
-              height: `${chassisHeightPct}%`,
-              transformStyle: "preserve-3d",
-              pointerEvents: "none",
-              zIndex: customTvPng ? 30 : 10,
-            }}
+  position: "absolute",
+  left: `${chassisLeftPct}%`,
+  top: `${chassisTopPct}%`,
+  width: `${chassisWidthPct}%`,
+  height: `${chassisHeightPct * TV_DIMENSIONS.heightStretch}%`,
+  transformStyle: "preserve-3d",
+  pointerEvents: "none",
+  zIndex: 30,
+  mixBlendMode: "normal",
+  opacity: 0,
+}}
           >
-            {customTvPng ? (
+            {tvFrameSrc ? (
               <img
-                src={customTvPng}
-                alt="Custom CRT Frame"
+                src={tvFrameSrc}
+                alt="Vintage CRT Television Frame"
                 style={{
                   position: "absolute",
                   inset: 0,
                   width: "100%",
                   height: "100%",
                   objectFit: "fill",
-                  filter: "drop-shadow(-30px 45px 65px rgba(0,0,0,0.88))",
+                  filter: "drop-shadow(-20px 30px 48px rgba(0,0,0,0.9))",
                 }}
               />
-            ) : (
-              <div style={{ position: "absolute", inset: 0, transformStyle: "preserve-3d" }}>
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "9%",
-                    left: "0",
-                    width: "48px",
-                    height: "86%",
-                    background: "linear-gradient(90deg, #544b38, #82765b)",
-                    transformOrigin: "left center",
-                    transform: "rotateY(-90deg)",
-                    borderRadius: "10px 0 0 10px",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "1%",
-                    left: "24%",
-                    width: "38%",
-                    height: "8%",
-                    border: "10px solid #8a8d8f",
-                    borderBottom: "none",
-                    borderRadius: "14px 14px 0 0",
-                    background: "linear-gradient(to bottom, #423632 0%, #423632 55%, transparent 55%)",
-                  }}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "8%",
-                    left: "0%",
-                    width: "100%",
-                    height: "88%",
-                    background: "#a89b7c",
-                    borderRadius: "28px",
-                    boxShadow: "-35px 50px 80px rgba(0,0,0,0.9), inset 0 3px 5px rgba(255,255,255,0.35)",
-                  }}
-                >
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "4%",
-                      left: "2.5%",
-                      width: "75%",
-                      height: "91%",
-                      background: "linear-gradient(145deg, #d8d3c8, #b5ae9e)",
-                      borderRadius: "38px",
-                      boxShadow: "inset 0 6px 18px rgba(0,0,0,0.45), 0 3px 6px rgba(0,0,0,0.3)",
-                    }}
-                  />
-                  <div
-                    style={{
-                      position: "absolute",
-                      top: "6%",
-                      right: "3.5%",
-                      width: "17%",
-                      height: "88%",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                    }}
-                  >
-                    <div
-                      style={{
-                        height: "42%",
-                        background: "#463c37",
-                        borderRadius: "6px",
-                        border: "3px solid #756a54",
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "center",
-                        justifyContent: "space-evenly",
-                      }}
-                    >
-                      <div style={{ width: "36%", aspectRatio: "1/1", borderRadius: "50%", background: "#d8d2c5", border: "4px solid #99907d" }} />
-                      <div style={{ width: "36%", aspectRatio: "1/1", borderRadius: "50%", background: "#d8d2c5", border: "4px solid #99907d" }} />
-                    </div>
-                    <div
-                      style={{
-                        width: "70%",
-                        aspectRatio: "1/1",
-                        margin: "0 auto",
-                        borderRadius: "50%",
-                        background: "conic-gradient(#d6d1c4, #f3efe6, #9e9686, #d6d1c4)",
-                        border: "5px solid #c7bfa8",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <div style={{ width: "18%", height: "65%", borderRadius: 4, background: "#7c7465", transform: "rotate(25deg)" }} />
-                    </div>
-                    <div
-                      style={{
-                        height: "32%",
-                        borderRadius: "4px",
-                        background: "repeating-linear-gradient(90deg, #3a3127 0px, #3a3127 5px, #988b6e 5px, #988b6e 11px)",
-                        border: "3px solid #7d7158",
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
 
         <div ref={scrollCueRef} className="revel-scroll-cue" aria-hidden="true">
-          <span ref={cueTextRef} className="revel-scroll-cue-text">{cueLabel}</span>
+          <span className="revel-scroll-cue-text">{cueLabel}</span>
           <span className="revel-scroll-cue-line" />
         </div>
 
@@ -1461,9 +1246,9 @@ export default function RevelCRTStage({
               if (offset < -1) offset += lineup.length;
 
               const isActive = offset === 0;
-              const translateX = offset * 52;
-              const scale = isActive ? 1 : 0.84;
-              const rotateY = offset * -10;
+              const translateX = offset * LINEUP_CARD_DIMENSIONS.cardSpreadPercent;
+              const scale = isActive ? 1 : 0.78;
+              const rotateY = offset * -8;
 
               return (
                 <div
@@ -1472,7 +1257,7 @@ export default function RevelCRTStage({
                   className={`revel-lineup-card ${isActive ? "is-active" : ""}`}
                   style={{
                     zIndex: isActive ? 5 : 2,
-                    opacity: isActive ? 1 : 0.68,
+                    opacity: isActive ? 1 : 0.42,
                     transform: `translateX(${translateX}%) scale(${scale}) perspective(900px) rotateY(${rotateY}deg)`,
                   }}
                 >

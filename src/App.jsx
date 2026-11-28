@@ -9,7 +9,7 @@ import Navbar from './Navbar';
 import ThemeSection from './ThemeSection';
 import HighlightsSection from './components/HighlightsSection';
 import ElasticGallery from './components/gallery/ElasticGallery';
-import RevelCrtStage from './RevelCRTStage';
+import RevelCRTStage from './RevelCRTStage';
 import { DEFAULT_REVEL_LINEUP } from './revelLineupConfig';
 import ArcShowcaseSection from './components/ArcShowcaseSection';
 import { showcaseConfig } from './components/showcaseConfig';
@@ -30,12 +30,12 @@ function HomePage() {
     setReadyFlags((prev) => ({ ...prev, hero: true }));
   }, []);
 
-  // Re-measure all GSAP ScrollTriggers once RitualLoader unlocks page scroll
+  // Re-measure ScrollTriggers once RitualLoader unlocks and layout settles
   useEffect(() => {
     if (!hasEntered) return;
     const timer = setTimeout(() => {
       ScrollTrigger.refresh();
-    }, 150);
+    }, 200);
     return () => clearTimeout(timer);
   }, [hasEntered]);
 
@@ -43,43 +43,85 @@ function HomePage() {
     let cancelled = false;
 
     const verifyDownstreamAssets = async () => {
-      await new Promise((resolve) => requestAnimationFrame(resolve));
+      // Wait 2 animation frames so all mounted <img> elements are in the DOM
+      await new Promise((resolve) =>
+        requestAnimationFrame(() => requestAnimationFrame(resolve))
+      );
 
+      // 1. Explicitly preload & decode the Vidyut SVG logo
+      const logoPromise = new Promise((resolve) => {
+        const logoImg = new Image();
+        logoImg.decoding = 'async';
+        logoImg.src = vidyutLogo;
+        if (logoImg.complete && logoImg.naturalWidth > 0) {
+          logoImg.decode ? logoImg.decode().catch(() => {}).finally(resolve) : resolve();
+        } else {
+          logoImg.onload = () => {
+            logoImg.decode ? logoImg.decode().catch(() => {}).finally(resolve) : resolve();
+          };
+          logoImg.onerror = resolve;
+        }
+      });
+
+      // 2. Non-lazy DOM images
       const domImages = Array.from(document.querySelectorAll('img')).filter(
         (img) => img.loading !== 'lazy'
       );
 
       const imgPromises = domImages.map((img) => {
-        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        if (img.complete && img.naturalWidth > 0) {
+          return img.decode ? img.decode().catch(() => {}) : Promise.resolve();
+        }
         return new Promise((resolve) => {
-          img.addEventListener('load', resolve, { once: true });
-          img.addEventListener('error', resolve, { once: true });
+          const done = () => {
+            img.removeEventListener('load', done);
+            img.removeEventListener('error', done);
+            if (img.decode) {
+              img.decode().catch(() => {}).finally(resolve);
+            } else {
+              resolve();
+            }
+          };
+          img.addEventListener('load', done, { once: true });
+          img.addEventListener('error', done, { once: true });
         });
       });
 
-      const videoSources = ['/drone_8s.mp4', '/loop_video.mp4'];
-      const videoPromises = videoSources.map(
-        (src) =>
-          new Promise((resolve) => {
-            const vid = document.createElement('video');
-            vid.preload = 'metadata';
-            vid.muted = true;
-            vid.src = src;
-            vid.addEventListener('loadedmetadata', resolve, { once: true });
-            vid.addEventListener('error', resolve, { once: true });
-          })
-      );
+      // 3. Preload & buffer drone and loop videos before unlocking loader
+      const preloadVideos = ['/drone_8s.mp4', '/loop_video.mp4'].map((src) => {
+        return new Promise((resolve) => {
+          const vid = document.createElement('video');
+          vid.preload = 'auto';
+          vid.muted = true;
+          vid.playsInline = true;
+          vid.src = src;
 
+          const done = () => {
+            vid.removeEventListener('canplaythrough', done);
+            vid.removeEventListener('error', done);
+            resolve();
+          };
+
+          vid.addEventListener('canplaythrough', done, { once: true });
+          vid.addEventListener('error', done, { once: true });
+          vid.load();
+        });
+      });
+
+      // 4. Web fonts
       const fontPromise = document.fonts ? document.fonts.ready : Promise.resolve();
-      const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 2800));
+
+      // Safety cap so slower connections finish buffering videos without hanging forever
+      const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 8500));
 
       await Promise.race([
-        Promise.all([...imgPromises, ...videoPromises, fontPromise]),
+        Promise.all([logoPromise, ...imgPromises, ...preloadVideos, fontPromise]),
         timeoutPromise,
       ]);
 
       if (!cancelled) {
         setReadyFlags((prev) => ({ ...prev, downstreamMedia: true }));
+        ScrollTrigger.refresh();
       }
     };
 
@@ -113,26 +155,23 @@ function HomePage() {
           <HighlightsSection />
         </div>
 
-        <div id="autoexpo" style={{ scrollMarginTop: '80px' }}>
-          <ElasticGallery />
-        </div>
-
-        <div id="revel" style={{ scrollMarginTop: '80px' }}>
-          <RevelCrtStage
+        <div style={{ scrollMarginTop: '80px' }}>
+          <RevelCRTStage
             droneSrc="/drone_8s.mp4"
             loopSrc="/loop_video.mp4"
-            holeLeft={4}
-            holeTop={13}
-            holeWidth={72}
-            holeHeight={77}
             lineup={DEFAULT_REVEL_LINEUP}
           />
         </div>
 
         <ArcShowcaseSection
+          id="revel"
           workshops={showcaseConfig.workshops}
           competitions={showcaseConfig.competitions}
         />
+
+        <div id="gallery" style={{ scrollMarginTop: '80px' }}>
+          <ElasticGallery />
+        </div>
       </div>
     </>
   );

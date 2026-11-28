@@ -12,7 +12,7 @@ const DEFAULT_LINKS = [
   { label: 'COMPETITIONS', to: '/competitions' },
   // Same-Page Sections (Home Page)
   { label: 'REVEL', to: '/#revel' },
-  { label: 'AUTOEXPO', to: '/#autoexpo' },
+  { label: 'GALLERY', to: '/#gallery' },
   { label: 'HIGHLIGHTS', to: '/#highlights' },
 ];
 
