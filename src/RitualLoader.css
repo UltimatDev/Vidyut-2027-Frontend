@@ -216,6 +216,18 @@
   animation: logoFloat 3.6s ease-in-out infinite alternate;
 }
 
+.ophanim-inline-svg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ophanim-inline-svg svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .ophanim-fallback-crest {
   position: relative;
   width: 92%;

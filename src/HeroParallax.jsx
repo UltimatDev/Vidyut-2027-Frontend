@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import './HeroParallax.css';
 
-import skyImg from './assets/sky.png';
-import mountainTheyyamImg from './assets/MOUNTAIN with theyam.png';
-import theyyamCharacterImg from './assets/web.png';
+import skyImg from './assets/sky.webp';
+import mountainTheyyamImg from './assets/MOUNTAIN with theyam.webp';
+import theyyamCharacterImg from './assets/web.webp';
 import customImpactAudio from './assets/slam.mp3';
 
 const SUBTITLE_DEFAULT = 'NATIONAL LEVEL MULTIFEST';

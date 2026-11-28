@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import './RitualLoader.css';
+import vidyutLogoRaw from './logo.svg?raw';
 
 const AWAKENING_PHRASES = [
   'AWAKENING THE FLAME',
@@ -10,58 +11,16 @@ const AWAKENING_PHRASES = [
 
 const RitualLoader = ({
   isSceneReady = false,
-  logoSrc = null,
+  progressValue = 0,
   onEnter,
 }) => {
-  const [progress, setProgress] = useState(0);
+  const [displayProgress, setDisplayProgress] = useState(0);
   const [phraseIndex, setPhraseIndex] = useState(0);
-  const [logoReady, setLogoReady] = useState(!logoSrc);
-  const [logoFailed, setLogoFailed] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
   const [isUnmounted, setIsUnmounted] = useState(false);
 
-  // Preload logoSrc and unblock even if browser doesn't fire onload for cached SVG
-  useEffect(() => {
-    if (!logoSrc) {
-      setLogoReady(true);
-      setLogoFailed(false);
-      return;
-    }
-
-    let cancelled = false;
-    setLogoReady(false);
-    setLogoFailed(false);
-
-    const img = new window.Image();
-    img.src = logoSrc;
-
-    const done = () => {
-      if (!cancelled) setLogoReady(true);
-    };
-
-    const fail = () => {
-      if (!cancelled) {
-        setLogoFailed(true);
-        setLogoReady(true);
-      }
-    };
-
-    if (img.complete) {
-      done();
-    } else {
-      img.onload = done;
-      img.onerror = fail;
-    }
-
-    const safety = setTimeout(done, 1200);
-    return () => {
-      cancelled = true;
-      clearTimeout(safety);
-    };
-  }, [logoSrc]);
-
-  // Lock scroll while loader is visible
+  // Lock page scroll & force top position while loader is active
   useEffect(() => {
     if (isUnmounted) return;
 
@@ -87,32 +46,34 @@ const RitualLoader = ({
     };
   }, [isUnmounted]);
 
-  const everythingReady = isSceneReady && logoReady;
-
+  // Smoothly track real download progress from App.jsx
   useEffect(() => {
+    const target = isSceneReady ? 100 : Math.min(99, progressValue);
+
     const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (!everythingReady) {
-          const next = prev + (92 - prev) * 0.08;
-          return Math.min(92, Math.round(next * 10) / 10);
-        }
-        if (prev < 100) {
-          const next = Math.min(100, prev + 6);
-          if (next >= 100) {
+      setDisplayProgress((prev) => {
+        if (prev >= target) {
+          if (isSceneReady && prev >= 100) {
             setIsUnlocked(true);
             clearInterval(interval);
           }
-          return next;
+          return prev;
         }
-        setIsUnlocked(true);
-        clearInterval(interval);
-        return 100;
+        const step = Math.max(0.5, (target - prev) * 0.18);
+        const next = Math.min(target, prev + step);
+        if (isSceneReady && next >= 99.8) {
+          setIsUnlocked(true);
+          clearInterval(interval);
+          return 100;
+        }
+        return next;
       });
-    }, 55);
+    }, 40);
 
     return () => clearInterval(interval);
-  }, [everythingReady]);
+  }, [isSceneReady, progressValue]);
 
+  // Cycle subtle awakening phrases while loading
   useEffect(() => {
     if (isUnlocked) return;
     const phraseTimer = setInterval(() => {
@@ -123,8 +84,10 @@ const RitualLoader = ({
 
   const handleEnterClick = () => {
     if (!isUnlocked || isExiting) return;
+
     setIsExiting(true);
     if (onEnter) onEnter();
+
     setTimeout(() => {
       setIsUnmounted(true);
     }, 650);
@@ -145,8 +108,10 @@ const RitualLoader = ({
         if (e.key === 'Enter' || e.key === ' ') handleEnterClick();
       }}
     >
+      {/* Subtle Ambient Light Core */}
       <div className="ophanim-ambient-core" />
 
+      {/* 3D Tilted Intersecting White Circular Strips ("Eye of an Angel" / Ophanim Gimbal) */}
       <div className="ophanim-gimbal-stage" aria-hidden="true">
         <div className="ophanim-ring-plane plane-1">
           <svg className="ophanim-strip-svg" viewBox="0 0 400 400">
@@ -170,18 +135,13 @@ const RitualLoader = ({
           </svg>
         </div>
 
+        {/* Instantaneous Inlined SVG Logo (0ms network delay) */}
         <div className="ophanim-eye-pupil">
           <div className="eye-halo-pulse" />
-          {logoSrc && !logoFailed ? (
-            <img
-              src={logoSrc}
-              alt="Vidyut"
-              onLoad={() => setLogoReady(true)}
-              onError={() => {
-                setLogoFailed(true);
-                setLogoReady(true);
-              }}
-              className="ophanim-center-logo"
+          {vidyutLogoRaw ? (
+            <div
+              className="ophanim-center-logo ophanim-inline-svg"
+              dangerouslySetInnerHTML={{ __html: vidyutLogoRaw }}
             />
           ) : (
             <svg className="ophanim-fallback-crest" viewBox="0 0 160 160" fill="none">
@@ -206,6 +166,7 @@ const RitualLoader = ({
         </div>
       </div>
 
+      {/* Bottom Typography: "AWAKENING..." -> "CLICK TO ENTER" */}
       <div className="ophanim-status-block">
         {!isUnlocked ? (
           <>
@@ -213,10 +174,10 @@ const RitualLoader = ({
             <div className="ophanim-progress-bar">
               <div
                 className="ophanim-progress-fill"
-                style={{ width: `${Math.round(progress)}%` }}
+                style={{ width: `${Math.round(displayProgress)}%` }}
               />
             </div>
-            <span className="ophanim-progress-num">{Math.round(progress)}%</span>
+            <span className="ophanim-progress-num">{Math.round(displayProgress)}%</span>
           </>
         ) : (
           <div className="ophanim-enter-prompt">

@@ -22,6 +22,7 @@ gsap.registerPlugin(ScrollTrigger);
 function HomePage() {
   const [hasEntered, setHasEntered] = useState(false);
   const [droneBlobUrl, setDroneBlobUrl] = useState(null);
+  const [loadProgress, setLoadProgress] = useState(5);
   const [readyFlags, setReadyFlags] = useState({
     hero: false,
     downstreamMedia: false,
@@ -29,6 +30,7 @@ function HomePage() {
 
   const handleHeroReady = useCallback(() => {
     setReadyFlags((prev) => ({ ...prev, hero: true }));
+    setLoadProgress((prev) => Math.max(prev, 35));
   }, []);
 
   // Re-measure ScrollTriggers once RitualLoader unlocks and layout settles
@@ -49,7 +51,7 @@ function HomePage() {
         requestAnimationFrame(() => requestAnimationFrame(resolve))
       );
 
-      // 1. Wait for eager above-the-fold images (Navbar logo, etc.)
+      // 1. Eager DOM images (Navbar logo, etc.)
       const eagerImages = Array.from(document.querySelectorAll('img')).filter(
         (img) => img.loading !== 'lazy'
       );
@@ -62,12 +64,34 @@ function HomePage() {
         });
       });
 
-      // 2. Download /drone_8s.mp4 into a Blob URL once during RitualLoader
-      // so RevelCRTStage gets instant zero-latency seeking with no duplicate download
+      // 2. Stream /drone_8s.mp4 with real byte progress (35% -> 85%)
       const dronePromise = fetch('/drone_8s.mp4')
-        .then((res) => {
+        .then(async (res) => {
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.blob();
+          const contentLength = Number(res.headers.get('content-length')) || 0;
+
+          if (!res.body || !contentLength) {
+            const blob = await res.blob();
+            if (!cancelled) setLoadProgress((p) => Math.max(p, 85));
+            return blob;
+          }
+
+          const reader = res.body.getReader();
+          const chunks = [];
+          let received = 0;
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            chunks.push(value);
+            received += value.length;
+            if (!cancelled) {
+              const pct = 35 + Math.round((received / contentLength) * 50);
+              setLoadProgress((p) => Math.max(p, Math.min(85, pct)));
+            }
+          }
+
+          return new Blob(chunks, { type: 'video/mp4' });
         })
         .then((blob) => {
           if (!cancelled) {
@@ -77,7 +101,7 @@ function HomePage() {
         })
         .catch((err) => console.warn('Drone video preload skipped:', err));
 
-      // 3. Buffer loop_video.mp4 so it starts immediately when TV mode activates
+      // 3. Buffer /loop_video.mp4 (85% -> 95%)
       const loopPromise = new Promise((resolve) => {
         const vid = document.createElement('video');
         vid.preload = 'auto';
@@ -89,6 +113,7 @@ function HomePage() {
           vid.removeEventListener('canplaythrough', done);
           vid.removeEventListener('loadeddata', done);
           vid.removeEventListener('error', done);
+          if (!cancelled) setLoadProgress((p) => Math.max(p, 95));
           resolve();
         };
 
@@ -99,9 +124,6 @@ function HomePage() {
       });
 
       const fontPromise = document.fonts ? document.fonts.ready : Promise.resolve();
-
-      // 25s emergency failsafe so slower connections finish Hero + Drone buffering
-      // without ever soft-locking the loader if a network request hangs
       const emergencyTimeout = new Promise((resolve) => setTimeout(resolve, 25000));
 
       await Promise.race([
@@ -110,6 +132,7 @@ function HomePage() {
       ]);
 
       if (!cancelled) {
+        setLoadProgress(100);
         setReadyFlags((prev) => ({ ...prev, downstreamMedia: true }));
         ScrollTrigger.refresh();
       }
@@ -129,7 +152,7 @@ function HomePage() {
     <>
       <RitualLoader
         isSceneReady={allReady}
-        logoSrc={vidyutLogo}
+        progressValue={loadProgress}
         onEnter={() => setHasEntered(true)}
       />
 
