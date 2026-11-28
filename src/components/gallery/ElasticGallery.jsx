@@ -1,462 +1,287 @@
-import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { GALLERY_IMAGES, MARQUEE_ROWS } from './galleryConfig';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { GALLERY_ITEMS, TICKER_TOP, TICKER_BOTTOM } from './galleryConfig';
 import './ElasticGallery.css';
 
-const WINDOW_RADIUS = 5; // Renders 11 slots total (-5 .. +5) regardless of folder image count
-const SLOT_OFFSETS = Array.from({ length: WINDOW_RADIUS * 2 + 1 }, (_, i) => i - WINDOW_RADIUS);
-
-function lerp(a, b, t) {
-  return a + (b - a) * t;
-}
-
-function getCardMetrics(distance, isMobile, hoverBoost) {
-  const heroW = isMobile ? 265 : 580;
-  const heroH = isMobile ? 280 : 420;
-  const sideW1 = isMobile ? 76 : 156;
-  const sideW2 = isMobile ? 30 : 60;
-  const sideW3 = isMobile ? 13 : 24;
-  const sideH = isMobile ? 225 : 336;
-  const baseGap = isMobile ? 8 : 14;
-
-  const swellW = hoverBoost * (isMobile ? 10 : 20);
-  const swellH = hoverBoost * (isMobile ? 6 : 12);
-
-  if (distance <= 1) {
-    return {
-      width: lerp(heroW, sideW1, distance) + swellW * distance,
-      height: lerp(heroH, sideH, distance) + swellH * distance,
-      gap: baseGap,
-      desaturate: Math.max(0, distance - hoverBoost * 0.25),
-      dim: lerp(0, 0.24, distance) * (1 - hoverBoost * 0.4),
-      opacity: 1
-    };
-  }
-
-  if (distance <= 2) {
-    const t = distance - 1;
-    return {
-      width: lerp(sideW1, sideW2, t) + swellW,
-      height: sideH + swellH,
-      gap: baseGap,
-      desaturate: Math.max(0, 1 - hoverBoost * 0.25),
-      dim: lerp(0.24, 0.4, t) * (1 - hoverBoost * 0.4),
-      opacity: 1
-    };
-  }
-
-  if (distance <= 3) {
-    const t = distance - 2;
-    return {
-      width: lerp(sideW2, sideW3, t) + swellW * 0.7,
-      height: sideH + swellH * 0.7,
-      gap: baseGap,
-      desaturate: Math.max(0, 1 - hoverBoost * 0.25),
-      dim: lerp(0.4, 0.54, t) * (1 - hoverBoost * 0.4),
-      opacity: 1
-    };
-  }
-
-  if (distance <= 3.75) {
-    const t = (distance - 3) / 0.75;
-    return {
-      width: lerp(sideW3, 0, t),
-      height: sideH,
-      gap: lerp(baseGap, 0, t),
-      desaturate: 1,
-      dim: 0.56,
-      opacity: lerp(1, 0, t)
-    };
-  }
-
-  return {
-    width: 0,
-    height: sideH,
-    gap: 0,
-    desaturate: 1,
-    dim: 0.56,
-    opacity: 0
-  };
-}
-
 export default function ElasticGallery() {
-  const setLength = GALLERY_IMAGES.length;
-
+  const total = GALLERY_ITEMS.length;
   const [activeIndex, setActiveIndex] = useState(0);
-  const [anchorIndex, setAnchorIndex] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-  const [isInView, setIsInView] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
-  const rootRef = useRef(null);
-  const trackRef = useRef(null);
-  const cardRefs = useRef(new Map());
-  const desatRefs = useRef(new Map());
-  const dimRefs = useRef(new Map());
-  const hoverAmountsRef = useRef(new Map());
+  const sectionRef = useRef(null);
+  const topTickerRef = useRef(null);
+  const bottomTickerRef = useRef(null);
+  const stageRef = useRef(null);
 
-  const targetPosRef = useRef(0);
-  const currentPosRef = useRef(0);
-  const velocityPosRef = useRef(0);
   const activeIndexRef = useRef(0);
-  const anchorIndexRef = useRef(0);
-  const hoveredVIdxRef = useRef(null);
-
+  const targetProgressRef = useRef(0);
+  const currentProgressRef = useRef(0);
   const rafIdRef = useRef(null);
-  const lastTimeRef = useRef(0);
+  const preloadedSetRef = useRef(new Set());
 
-  const isDraggingRef = useRef(false);
-  const dragStartXRef = useRef(0);
-  const dragStartPosRef = useRef(0);
-  const dragMovedRef = useRef(false);
+  // Preload & off-thread decode only immediate neighbor frames
+  useEffect(() => {
+    if (total <= 1) return;
+    [activeIndex - 1, activeIndex + 1].forEach((rawIdx) => {
+      const idx = ((rawIdx % total) + total) % total;
+      const src = GALLERY_ITEMS[idx]?.image;
+      if (!src || preloadedSetRef.current.has(src)) return;
 
-  // Apply exact geometry & compositor opacities for the 11 active virtual slots
-  const applyLayout = useCallback((pos, dt) => {
-    const vw = window.innerWidth;
-    const mobile = vw < 768;
-    const anchor = anchorIndexRef.current;
-    const hoverLerp = dt > 0 ? 1 - Math.exp(-14 * dt) : 1;
+      preloadedSetRef.current.add(src);
+      const img = new Image();
+      img.decoding = 'async';
+      img.src = src;
+      img.decode?.().catch(() => {});
+    });
+  }, [activeIndex, total]);
 
-    let hoverStillMoving = false;
-    let cursor = 0;
-    let focusX = 0;
+  // Passive scroll listener + on-demand rAF ticker smoother
+  useEffect(() => {
+    if (total === 0) return;
 
-    for (let idx = 0; idx < SLOT_OFFSETS.length; idx++) {
-      const offset = SLOT_OFFSETS[idx];
-      const vIdx = anchor + offset;
+    const updateFrame = () => {
+      const target = targetProgressRef.current;
+      const current = currentProgressRef.current;
+      const delta = target - current;
 
-      const targetHover =
-        !isDraggingRef.current && hoveredVIdxRef.current === vIdx && vIdx !== activeIndexRef.current
-          ? 1
-          : 0;
-      const prevHover = hoverAmountsRef.current.get(vIdx) ?? 0;
-      const nextHover = prevHover + (targetHover - prevHover) * hoverLerp;
+      const next = Math.abs(delta) < 0.0002 ? target : current + delta * 0.14;
+      currentProgressRef.current = next;
 
-      if (Math.abs(targetHover - nextHover) > 0.005) {
-        hoverStillMoving = true;
+      // 1. Scrub opposing marquee rows via GPU translate3d
+      const shiftPx = next * Math.max(420, total * 130);
+      if (topTickerRef.current) {
+        topTickerRef.current.style.transform = `translate3d(-${shiftPx.toFixed(1)}px, 0, 0)`;
       }
-      hoverAmountsRef.current.set(vIdx, Math.abs(nextHover) < 0.001 ? 0 : nextHover);
-
-      const dist = Math.abs(vIdx - pos);
-      const m = getCardMetrics(dist, mobile, nextHover);
-      const center = cursor + m.width * 0.5;
-      cursor += m.width + m.gap;
-
-      // Interpolate track focal center around `pos`
-      const floorPos = Math.floor(pos);
-      if (vIdx === floorPos) {
-        focusX += center * (1 - (pos - floorPos));
-      } else if (vIdx === floorPos + 1) {
-        focusX += center * (pos - floorPos);
+      if (bottomTickerRef.current) {
+        bottomTickerRef.current.style.transform = `translate3d(${(shiftPx - 360).toFixed(1)}px, 0, 0)`;
       }
 
-      const cardEl = cardRefs.current.get(vIdx);
-      if (cardEl) {
-        cardEl.style.width = `${m.width.toFixed(1)}px`;
-        cardEl.style.height = `${m.height.toFixed(1)}px`;
-        cardEl.style.marginRight = `${m.gap.toFixed(1)}px`;
-        cardEl.style.opacity = m.opacity.toFixed(3);
-        cardEl.style.pointerEvents = m.width > 6 ? 'auto' : 'none';
-      }
-
-      const desatEl = desatRefs.current.get(vIdx);
-      if (desatEl) {
-        desatEl.style.opacity = m.desaturate.toFixed(3);
-      }
-
-      const dimEl = dimRefs.current.get(vIdx);
-      if (dimEl) {
-        dimEl.style.opacity = m.dim.toFixed(3);
-      }
-    }
-
-    if (trackRef.current) {
-      const translateX = vw * 0.5 - focusX;
-      trackRef.current.style.transform = `translate3d(${translateX.toFixed(1)}px, 0, 0)`;
-    }
-
-    return hoverStillMoving;
-  }, []);
-
-  // On-demand spring loop: automatically sleeps when settled so idle CPU = 0%
-  const startSpringLoop = useCallback(() => {
-    if (rafIdRef.current !== null) return;
-    lastTimeRef.current = performance.now();
-
-    const tick = (now) => {
-      const dt = Math.min((now - lastTimeRef.current) / 1000, 0.05);
-      lastTimeRef.current = now;
-
-      let springMoving = false;
-
-      if (!isDraggingRef.current) {
-        const displacement = targetPosRef.current - currentPosRef.current;
-
-        if (Math.abs(displacement) > 0.0005 || Math.abs(velocityPosRef.current) > 0.0005) {
-          springMoving = true;
-          const stiffness = 135;
-          const damping = 18.5;
-          const accel = displacement * stiffness - velocityPosRef.current * damping;
-
-          velocityPosRef.current += accel * dt;
-          currentPosRef.current += velocityPosRef.current * dt;
+      // 2. Smooth exit dissolve in the final 12% of scroll into the footer
+      if (stageRef.current) {
+        if (next > 0.88) {
+          const exitT = (next - 0.88) / 0.12;
+          stageRef.current.style.opacity = Math.max(0, 1 - exitT * 0.85).toFixed(3);
+          stageRef.current.style.transform = `translate3d(0, ${(-exitT * 24).toFixed(1)}px, 0)`;
         } else {
-          currentPosRef.current = targetPosRef.current;
-          velocityPosRef.current = 0;
+          stageRef.current.style.opacity = '1';
+          stageRef.current.style.transform = 'translate3d(0, 0, 0)';
         }
       }
 
-      const nextAnchor = Math.floor(currentPosRef.current);
-      if (nextAnchor !== anchorIndexRef.current) {
-        anchorIndexRef.current = nextAnchor;
-        setAnchorIndex(nextAnchor);
+      // 3. Hard-cut active slide only when crossing a frame boundary
+      const nextIdx = Math.min(total - 1, Math.max(0, Math.floor(next * total)));
+      if (nextIdx !== activeIndexRef.current) {
+        activeIndexRef.current = nextIdx;
+        setActiveIndex(nextIdx);
       }
 
-      const hoverMoving = applyLayout(currentPosRef.current, dt);
-
-      if (springMoving || hoverMoving || isDraggingRef.current) {
-        rafIdRef.current = requestAnimationFrame(tick);
+      if (Math.abs(target - next) > 0.0002) {
+        rafIdRef.current = requestAnimationFrame(updateFrame);
       } else {
         rafIdRef.current = null;
       }
     };
 
-    rafIdRef.current = requestAnimationFrame(tick);
-  }, [applyLayout]);
+    const onScroll = () => {
+      const el = sectionRef.current;
+      if (!el) return;
 
-  // Synchronously position newly mounted edge slots before paint
-  useLayoutEffect(() => {
-    applyLayout(currentPosRef.current, 0);
-  }, [anchorIndex, applyLayout]);
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight;
 
-  // Recalculate on resize without running a continuous loop
-  useEffect(() => {
-    const handleResize = () => applyLayout(currentPosRef.current, 0);
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
-    };
-  }, [applyLayout]);
+      if (rect.top > vh + 100 && currentProgressRef.current === 0) return;
+      if (rect.bottom < -100 && currentProgressRef.current === 1) return;
 
-  // IntersectionObserver: triggers entrance once & pauses background marquee when offscreen
-  useEffect(() => {
-    const el = rootRef.current;
-    if (!el) return;
+      const scrollable = Math.max(1, el.offsetHeight - vh);
+      const raw = -rect.top / scrollable;
+      targetProgressRef.current = Math.max(0, Math.min(1, raw));
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsInView(entry.isIntersecting);
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.08 }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  // Preload only immediate upcoming neighbor images (keeps RAM & CPU usage low)
-  useEffect(() => {
-    if (setLength <= 1) return;
-    [-3, 3].forEach((step) => {
-      const idx = (((activeIndex + step) % setLength) + setLength) % setLength;
-      const preloader = new Image();
-      preloader.decoding = 'async';
-      preloader.src = GALLERY_IMAGES[idx].image;
-    });
-  }, [activeIndex, setLength]);
-
-  const selectIndex = useCallback(
-    (nextIdx) => {
-      targetPosRef.current = nextIdx;
-      activeIndexRef.current = nextIdx;
-      setActiveIndex(nextIdx);
-      startSpringLoop();
-    },
-    [startSpringLoop]
-  );
-
-  // Keyboard navigation when gallery is in view
-  useEffect(() => {
-    if (!isInView) return;
-    const handleKeyDown = (e) => {
-      if (e.key === 'ArrowRight') {
-        selectIndex(activeIndexRef.current + 1);
-      } else if (e.key === 'ArrowLeft') {
-        selectIndex(activeIndexRef.current - 1);
+      if (rafIdRef.current === null) {
+        rafIdRef.current = requestAnimationFrame(updateFrame);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isInView, selectIndex]);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
 
-  // Pointer & Touch Drag Handlers
-  const handlePointerDown = (e) => {
-    isDraggingRef.current = true;
-    dragMovedRef.current = false;
-    velocityPosRef.current = 0;
-    const x = e.clientX ?? (e.touches && e.touches[0].clientX) ?? 0;
-    dragStartXRef.current = x;
-    dragStartPosRef.current = currentPosRef.current;
-    startSpringLoop();
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
+    };
+  }, [total]);
+
+  // Smooth scroll to a specific frame when clicking a filmstrip tick
+  const jumpToFrame = (idx) => {
+    const el = sectionRef.current;
+    if (!el || total === 0) return;
+
+    const sectionTop = window.scrollY + el.getBoundingClientRect().top;
+    const scrollable = Math.max(1, el.offsetHeight - window.innerHeight);
+    const targetProgress = (idx + 0.5) / total;
+
+    window.scrollTo({
+      top: sectionTop + targetProgress * scrollable,
+      behavior: 'smooth'
+    });
   };
 
-  const handlePointerMove = (e) => {
-    if (!isDraggingRef.current) return;
-    const x = e.clientX ?? (e.touches && e.touches[0].clientX) ?? 0;
-    const dx = dragStartXRef.current - x;
+  // Keyboard navigation when lightbox is open
+  useEffect(() => {
+    if (!lightboxOpen || total === 0) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
 
-    if (Math.abs(dx) > 6) {
-      dragMovedRef.current = true;
-    }
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setLightboxOpen(false);
+      } else if (e.key === 'ArrowRight') {
+        setActiveIndex((prev) => {
+          const next = (prev + 1) % total;
+          activeIndexRef.current = next;
+          return next;
+        });
+      } else if (e.key === 'ArrowLeft') {
+        setActiveIndex((prev) => {
+          const next = (prev - 1 + total) % total;
+          activeIndexRef.current = next;
+          return next;
+        });
+      }
+    };
 
-    const dragSensitivity = window.innerWidth < 768 ? 160 : 240;
-    const nextPos = dragStartPosRef.current + dx / dragSensitivity;
-    currentPosRef.current = nextPos;
-    targetPosRef.current = nextPos;
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [lightboxOpen, total]);
 
-    const nearest = Math.round(nextPos);
-    if (nearest !== activeIndexRef.current) {
-      activeIndexRef.current = nearest;
-      setActiveIndex(nearest);
-    }
-  };
+  if (total === 0) return null;
 
-  const handlePointerUp = () => {
-    if (!isDraggingRef.current) return;
-    isDraggingRef.current = false;
-    selectIndex(Math.round(currentPosRef.current));
-  };
-
-  const handleCardClick = (vIdx) => {
-    if (dragMovedRef.current) return;
-    if (vIdx !== activeIndexRef.current) {
-      selectIndex(vIdx);
-    }
-  };
+  const activeItem = GALLERY_ITEMS[activeIndex] || GALLERY_ITEMS[0];
+  const runwayHeight = `${Math.max(180, total * 40)}vh`;
+  const formattedCurrent = String(activeIndex + 1).padStart(2, '0');
+  const formattedTotal = String(total).padStart(2, '0');
 
   return (
     <section
-      ref={rootRef}
-      className={`eg-root${isVisible ? ' is-visible' : ''}${isInView ? ' is-inview' : ''}`}
+      ref={sectionRef}
+      className="vp-section"
+      style={{ height: runwayHeight }}
     >
-      <div className="eg-nebula-left" />
-      <div className="eg-nebula-right" />
+      <div className="vp-sticky">
+        <div className="vp-ambient" aria-hidden="true" />
+        <div className="vp-fade-top" aria-hidden="true" />
+        <div className="vp-fade-bottom" aria-hidden="true" />
 
-      <div className="eg-marquee-layer" aria-hidden="true">
-        {MARQUEE_ROWS.map((row, rowIdx) => (
-          <div
-            key={rowIdx}
-            className={`eg-marquee-row style-${row.style} dir-${row.direction}`}
-            style={{ animationDuration: `${row.duration}s` }}
-          >
-            <span className="eg-marquee-span">{row.text.repeat(3)}</span>
-            <span className="eg-marquee-span">{row.text.repeat(3)}</span>
+        {/* Opposing Kinetic Typography Ticker */}
+        <div className="vp-ticker-layer" aria-hidden="true">
+          <div ref={topTickerRef} className="vp-ticker-row is-top">
+            <span className="vp-ticker-span">{TICKER_TOP.repeat(4)}</span>
           </div>
-        ))}
-      </div>
+          <div ref={bottomTickerRef} className="vp-ticker-row is-bottom">
+            <span className="vp-ticker-span">{TICKER_BOTTOM.repeat(4)}</span>
+          </div>
+        </div>
 
-      <div className="eg-fade-top" />
-      <div className="eg-fade-bottom" />
-      <div className="eg-bridge" aria-hidden="true" />
+        {/* Pinned 35mm Viewport Frame */}
+        <div ref={stageRef} className="vp-stage">
+          <div
+            className="vp-frame"
+            onClick={() => setLightboxOpen(true)}
+          >
+            <span className="vp-corner tl" aria-hidden="true" />
+            <span className="vp-corner tr" aria-hidden="true" />
+            <span className="vp-corner bl" aria-hidden="true" />
+            <span className="vp-corner br" aria-hidden="true" />
 
-      <div
-        className="eg-stage"
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handlePointerUp}
-      >
-        <button
-          type="button"
-          className="eg-nav-btn eg-nav-prev"
-          onClick={(e) => {
-            e.stopPropagation();
-            selectIndex(activeIndex - 1);
-          }}
-          aria-label="Previous image"
-        >
-          <ChevronLeft size={18} />
-        </button>
+            <img
+              key={activeItem.id}
+              src={activeItem.image}
+              alt=""
+              decoding="async"
+              className="vp-img"
+            />
+          </div>
 
-        <button
-          type="button"
-          className="eg-nav-btn eg-nav-next"
-          onClick={(e) => {
-            e.stopPropagation();
-            selectIndex(activeIndex + 1);
-          }}
-          aria-label="Next image"
-        >
-          <ChevronRight size={18} />
-        </button>
+          {/* Minimalist Frame Counter & Interactive Scrubber Ticks */}
+          <div className="vp-hud">
+            <span className="vp-counter">
+              {formattedCurrent} / {formattedTotal}
+            </span>
 
-        <div ref={trackRef} className="eg-track">
-          {SLOT_OFFSETS.map((offset) => {
-            const vIdx = anchorIndex + offset;
-            const imgIdx = ((vIdx % setLength) + setLength) % setLength;
-            const item = GALLERY_IMAGES[imgIdx];
-            const isCenter = vIdx === activeIndex;
-            const isPriority = Math.abs(offset) <= 2;
-
-            return (
-              <div
-                key={vIdx}
-                ref={(el) => {
-                  if (el) cardRefs.current.set(vIdx, el);
-                  else cardRefs.current.delete(vIdx);
-                }}
-                onMouseEnter={() => {
-                  hoveredVIdxRef.current = vIdx;
-                  startSpringLoop();
-                }}
-                onMouseLeave={() => {
-                  if (hoveredVIdxRef.current === vIdx) {
-                    hoveredVIdxRef.current = null;
-                    startSpringLoop();
-                  }
-                }}
-                onClick={() => handleCardClick(vIdx)}
-                className={`eg-card${isCenter ? ' is-center' : ''}`}
-              >
-                <div
-                  className="eg-card-inner"
-                  style={{
-                    transitionDelay: isVisible ? '0ms' : `${Math.abs(offset) * 55}ms`
-                  }}
+            <div className="vp-ticks" role="tablist" aria-label="Gallery frames">
+              {GALLERY_ITEMS.map((item, idx) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`vp-tick${idx === activeIndex ? ' is-active' : ''}`}
+                  onClick={() => jumpToFrame(idx)}
+                  aria-label={`Frame ${idx + 1}`}
                 >
-                  <img
-                    src={item.image}
-                    alt=""
-                    loading={isPriority ? 'eager' : 'lazy'}
-                    decoding="async"
-                    fetchPriority={isCenter ? 'high' : 'auto'}
-                    className="eg-card-img"
-                  />
-                  <div
-                    ref={(el) => {
-                      if (el) desatRefs.current.set(vIdx, el);
-                      else desatRefs.current.delete(vIdx);
-                    }}
-                    className="eg-card-desat"
-                  />
-                  <div
-                    ref={(el) => {
-                      if (el) dimRefs.current.set(vIdx, el);
-                      else dimRefs.current.delete(vIdx);
-                    }}
-                    className="eg-card-dim"
-                  />
-                  <div className="eg-card-border" />
-                </div>
-              </div>
-            );
-          })}
+                  <span className="vp-tick-bar" />
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Portaled Fullscreen Lightbox */}
+      {lightboxOpen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            className="vp-lightbox"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <button
+              type="button"
+              className="vp-lb-btn vp-lb-close"
+              onClick={() => setLightboxOpen(false)}
+              aria-label="Close image"
+            >
+              <X size={18} />
+            </button>
+
+            <button
+              type="button"
+              className="vp-lb-btn vp-lb-prev"
+              onClick={(e) => {
+                e.stopPropagation();
+                const next = (activeIndex - 1 + total) % total;
+                activeIndexRef.current = next;
+                setActiveIndex(next);
+              }}
+              aria-label="Previous image"
+            >
+              <ChevronLeft size={20} />
+            </button>
+
+            <img
+              src={activeItem.image}
+              alt=""
+              className="vp-lightbox-img"
+              onClick={(e) => e.stopPropagation()}
+            />
+
+            <button
+              type="button"
+              className="vp-lb-btn vp-lb-next"
+              onClick={(e) => {
+                e.stopPropagation();
+                const next = (activeIndex + 1) % total;
+                activeIndexRef.current = next;
+                setActiveIndex(next);
+              }}
+              aria-label="Next image"
+            >
+              <ChevronRight size={20} />
+            </button>
+          </div>,
+          document.body
+        )}
     </section>
   );
 }

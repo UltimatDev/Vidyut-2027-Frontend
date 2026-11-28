@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { DEFAULT_REVEL_LINEUP } from "./revelLineupConfig";
-import oldTvFrameImg from "./old-tv-frame.png";
+import oldTvFrameImg from "./old-tv-frame.webp";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -130,6 +130,7 @@ export default function RevelCRTStage({
   const multiplyLayerRef = useRef(null);
   const lettersContainerRef = useRef(null);
   const charRefs = useRef([]);
+  const glowCharRefs = useRef([]);
 
   const [activeDayIdx, setActiveDayIdx] = useState(0);
   const [cueLabel, setCueLabel] = useState("SCROLL");
@@ -208,6 +209,7 @@ export default function RevelCRTStage({
     const multiplyLayer = multiplyLayerRef.current;
     const lettersContainer = lettersContainerRef.current;
     const chars = charRefs.current;
+    const glowChars = glowCharRefs.current;
 
     if (
       !section ||
@@ -390,8 +392,18 @@ export default function RevelCRTStage({
             );
           });
 
+          // Staggered start: R from top, E from bottom, V from top, E from bottom, L from top
           const yDirections = [-48, 48, -48, 48, -48];
           chars.forEach((el, index) => {
+            if (el) {
+              gsap.set(el, {
+                y: `${yDirections[index]}vh`,
+                scale: 0.92,
+                opacity: 0,
+              });
+            }
+          });
+          glowChars.forEach((el, index) => {
             if (el) {
               gsap.set(el, {
                 y: `${yDirections[index]}vh`,
@@ -429,11 +441,12 @@ export default function RevelCRTStage({
             },
           });
 
-          // 1. Staggered REVEL entry
+          // 1. Outlined staggered REVEL assembly from start
           chars.forEach((el, index) => {
-            if (el) {
+            const targets = [el, glowChars[index]].filter(Boolean);
+            if (targets.length) {
               tl.to(
-                el,
+                targets,
                 {
                   y: "0vh",
                   scale: 1,
@@ -614,7 +627,7 @@ export default function RevelCRTStage({
   }, [droneBlobUrl, holeLeft, holeTop, holeWidth, holeHeight]);
 
   const chassisWidthPct = (100 / holeWidth) * 100;
-  const chassisHeightPct = (100 / holeHeight) * 100;
+  const chassisHeightPct = (100 / holeHeight) * 100 * TV_DIMENSIONS.heightStretch;
   const chassisLeftPct = -(holeLeft / holeWidth) * 100;
   const chassisTopPct = -(holeTop / holeHeight) * 100;
 
@@ -1202,7 +1215,11 @@ export default function RevelCRTStage({
             >
               <div ref={glowContainerRef} className="revel-letters-box">
                 {["R", "E", "V", "E", "L"].map((char, i) => (
-                  <span key={i} className="revel-glow-char">
+                  <span
+                    key={i}
+                    ref={(el) => (glowCharRefs.current[i] = el)}
+                    className="revel-glow-char"
+                  >
                     {char}
                   </span>
                 ))}

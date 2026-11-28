@@ -157,8 +157,7 @@ function HomePage() {
       />
 
       {/* Continuous 2.5D Logo Layer behind HeroParallax & ThemeSection */}
-      <VidyutLogoBackdrop logoSrc={vidyutLogo} />
-
+    
       <HeroParallax isActive={hasEntered} onReady={handleHeroReady} />
 
       <ThemeSection />

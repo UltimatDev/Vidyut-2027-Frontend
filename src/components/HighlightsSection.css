@@ -26,29 +26,46 @@
   font-display: swap;
 }
 
-.hl-scroll-track {
-  --hl-enter: 0;
+/* Global scrollbar hide + overflow-x: clip so position: sticky always pins reliably */
+html,
+body {
+  overflow-x: clip;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Outer Pin Runway: MUST remain overflow: visible so sticky child pins */
+.hl-pin-track {
+  --hl-plane-scale: 1;
+  --hl-plane-radius: 0px;
+  --hl-plane-opacity: 1;
+  --hl-plane-border: 0;
   --hl-stagger: 0;
-  --hl-dock: 0;
   --hl-title-scale: 1;
-  --hl-stage-opacity: 0;
-  --hl-stage-scale: 0.76;
-  --hl-stage-y: 38px;
+  --hl-title-y: 0px;
+  --hl-cue-opacity: 1;
 
   position: relative;
+  z-index: 1;
   width: 100%;
-  height: 145vh;
+  height: 215vh;
   background-color: #000000;
   font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, sans-serif;
   box-sizing: border-box;
 }
 
-.hl-scroll-track *,
-.hl-scroll-track *::before,
-.hl-scroll-track *::after {
+.hl-pin-track *,
+.hl-pin-track *::before,
+.hl-pin-track *::after {
   box-sizing: border-box;
 }
 
+/* Pinned 100dvh Viewport */
 .hl-sticky-viewport {
   position: sticky;
   top: 0;
@@ -59,11 +76,34 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000000;
+  background-color: #000000;
 }
 
 /* =========================================================
-   1. LIGHTWEIGHT ATMOSPHERE (NO HEAVY REPAINTS ON SCROLL)
+   1. SPATIAL DEPTH PLANE (ZOOMS IN ON PIN -> RECEDES ON EXIT)
+   ========================================================= */
+.hl-depth-plane {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: clamp(5.1rem, 9.2vh, 6rem) clamp(1.25rem, 3.5vw, 3.25rem) clamp(1.75rem, 3.5vh, 2.5rem);
+  background-color: #050303;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+
+  opacity: var(--hl-plane-opacity);
+  border-radius: var(--hl-plane-radius);
+  box-shadow: 0 0 0 1px rgba(253, 224, 71, var(--hl-plane-border)),
+    0 35px 90px rgba(0, 0, 0, 0.95);
+  transform: scale(var(--hl-plane-scale));
+  transform-origin: center center;
+  will-change: transform, opacity, border-radius;
+}
+
+/* =========================================================
+   2. LIGHTWEIGHT ATMOSPHERE
    ========================================================= */
 .hl-atmosphere {
   position: absolute;
@@ -71,7 +111,6 @@
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
-  opacity: var(--hl-enter);
 }
 
 .hl-micro-grid {
@@ -117,11 +156,10 @@
   );
 }
 
-/* Architectural Viewfinder Framing */
 .hl-viewfinder-frame {
   position: absolute;
-  inset: clamp(5.1rem, 9.5vh, 6.1rem) clamp(1.25rem, 3vw, 2.75rem) clamp(1.25rem, 3vh, 2.25rem);
-  border: 1px solid rgba(253, 224, 71, 0.07);
+  inset: clamp(5rem, 9vh, 5.9rem) clamp(1.25rem, 3vw, 2.75rem) clamp(1.75rem, 3.5vh, 2.5rem);
+  border: 1px solid rgba(253, 224, 71, 0.08);
   border-radius: 14px;
   z-index: 2;
 }
@@ -130,7 +168,7 @@
   position: absolute;
   width: 14px;
   height: 14px;
-  border-color: rgba(253, 224, 71, 0.34);
+  border-color: rgba(253, 224, 71, 0.36);
   border-style: solid;
 }
 
@@ -158,7 +196,6 @@
   border-width: 0 1.5px 1.5px 0;
 }
 
-/* Floating Golden Dust Motes */
 .hl-motes-layer {
   position: absolute;
   inset: 0;
@@ -202,30 +239,36 @@
 }
 
 /* =========================================================
-   2. SCROLL-STAGGERED "HIGHLIGHTS" TITLE (BIG -> TOP HEADER)
+   3. MAIN STAGE & SCROLL-STAGGERED HEADER
    ========================================================= */
-.hl-title-stage {
-  position: absolute;
-  inset: 0;
+.hl-main-container {
+  position: relative;
+  z-index: 5;
+  width: 100%;
+  max-width: 1380px;
+  margin: 0 auto;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  pointer-events: none;
-  z-index: 9;
-  opacity: var(--hl-enter);
-  transform: translate3d(0, calc(var(--hl-dock) * (-50vh + 6.35rem)), 0)
-    scale(var(--hl-title-scale));
-  will-change: transform, opacity;
+  gap: clamp(1rem, 2vh, 1.65rem);
+}
+
+.hl-header {
+  text-align: center;
+  transform: translate3d(0, var(--hl-title-y), 0) scale(var(--hl-title-scale));
+  will-change: transform;
+  z-index: 8;
 }
 
 .hl-title-cluster {
+  margin: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.04em;
-  font-size: clamp(2.35rem, 7.2vw, 6.4rem);
-  line-height: 0.92;
-  letter-spacing: 0.05em;
+  font-size: clamp(1.85rem, 3.6vw, 2.95rem);
+  line-height: 0.95;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
@@ -243,33 +286,30 @@
   will-change: transform, opacity;
 }
 
-/* Deep Crimson Extruded Shadow Layer (Frontage-Shadow.otf) */
 .hl-char-shadow {
   font-family: "Frontage Shadow", sans-serif;
   color: rgba(185, 28, 28, 0.92);
   z-index: 1;
   transform: translate3d(
     0,
-    calc(var(--wave-dir) * var(--wave-amp) * var(--hl-stagger) * 46px),
+    calc(var(--wave-dir) * var(--wave-amp) * var(--hl-stagger) * 36px),
     0
   );
 }
 
-/* Ghosted Gold Outline Trail that separates during entry stagger */
 .hl-char-echo {
   font-family: "Frontage Bold", sans-serif;
   color: transparent;
-  -webkit-text-stroke: 1.25px rgba(253, 224, 71, 0.78);
+  -webkit-text-stroke: 1.15px rgba(253, 224, 71, 0.78);
   z-index: 2;
   opacity: clamp(0, calc(var(--hl-stagger) * 0.9), 0.9);
   transform: translate3d(
     0,
-    calc(var(--wave-dir) * var(--wave-amp) * var(--hl-stagger) * -32px),
+    calc(var(--wave-dir) * var(--wave-amp) * var(--hl-stagger) * -26px),
     0
   );
 }
 
-/* Crisp Ivory-to-Champagne-Gold Core (Frontage-Bold.otf) */
 .hl-char-core {
   font-family: "Frontage Bold", sans-serif;
   background: linear-gradient(180deg, #fffef9 15%, #fde68a 100%);
@@ -279,28 +319,22 @@
   z-index: 3;
   transform: translate3d(
     0,
-    calc(var(--wave-dir) * var(--wave-amp) * var(--hl-stagger) * 38px),
+    calc(var(--wave-dir) * var(--wave-amp) * var(--hl-stagger) * 30px),
     0
   );
 }
 
 /* =========================================================
-   3. EXPANDING SPLIT MEDIA SHOWCASE (STAYS SOLID AT BOTTOM)
+   4. TWO-COLUMN MEDIA SHOWCASE
    ========================================================= */
 .hl-showcase-stage {
   position: relative;
-  z-index: 6;
   width: 100%;
-  max-width: 1380px;
-  padding: clamp(5.2rem, 10.5vh, 6.8rem) clamp(1.25rem, 3.5vw, 3.25rem) 0;
-  opacity: var(--hl-stage-opacity);
-  transform: translate3d(0, var(--hl-stage-y), 0) scale(var(--hl-stage-scale));
-  will-change: transform, opacity;
 }
 
 .hl-stage-backlight {
   position: absolute;
-  inset: 14% 12% 4%;
+  inset: 10% 12% 4%;
   border-radius: 40px;
   background: radial-gradient(
     ellipse at 55% 50%,
@@ -323,7 +357,7 @@
 }
 
 /* =========================================================
-   4. SMOKED-OBSIDIAN INSTAGRAM PROFILE EMBED CARD
+   5. SMOKED-OBSIDIAN INSTAGRAM PROFILE EMBED CARD
    ========================================================= */
 .hl-ig-card {
   width: 100%;
@@ -343,7 +377,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  padding: 0.62rem 0.95rem;
+  padding: 0.6rem 0.95rem;
   background: #0a0505;
   border-bottom: 1px solid rgba(253, 224, 71, 0.12);
 }
@@ -375,7 +409,7 @@
 
 .hl-ig-follow-pill {
   flex-shrink: 0;
-  padding: 0.32rem 0.82rem;
+  padding: 0.3rem 0.8rem;
   border-radius: 999px;
   background: linear-gradient(135deg, #dc2626, #ea580c 60%, #d97706);
   border: 1px solid rgba(253, 224, 71, 0.35);
@@ -395,14 +429,14 @@
 .hl-ig-frame-crop {
   position: relative;
   width: 100%;
-  height: 356px;
+  height: 342px;
   background: #ffffff;
   overflow: hidden;
 }
 
 .hl-ig-iframe {
   width: calc(100% + 18px);
-  height: 405px;
+  height: 392px;
   border: 0;
   display: block;
 }
@@ -412,7 +446,7 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 0.62rem 0.9rem;
+  padding: 0.6rem 0.9rem;
   background: #0a0505;
   border-top: 1px solid rgba(253, 224, 71, 0.12);
   color: rgba(254, 243, 199, 0.85);
@@ -429,7 +463,7 @@
 }
 
 /* =========================================================
-   5. YOUTUBE COVERFLOW DECK
+   6. YOUTUBE COVERFLOW DECK
    ========================================================= */
 .hl-yt-col {
   position: relative;
@@ -529,20 +563,30 @@
   transform: scale(0.74);
 }
 
-.hl-yt-live-wrap,
-.hl-yt-facade,
-.hl-yt-iframe {
+.hl-yt-facade {
   position: relative;
   width: 100%;
   height: 100%;
-  border: 0;
-  display: block;
+  z-index: 1;
 }
 
 .hl-yt-facade img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+}
+
+.hl-yt-live-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.hl-yt-iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
   display: block;
 }
 
@@ -578,7 +622,50 @@
 }
 
 /* =========================================================
-   6. LAPTOP & MOBILE RESPONSIVENESS
+   7. TRIPLE-CHEVRON NEXT-PAGE CUE
+   ========================================================= */
+.hl-triple-chevron {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 0.2rem;
+  color: #fef3c7;
+  opacity: var(--hl-cue-opacity);
+  pointer-events: none;
+}
+
+.hl-triple-chevron svg {
+  margin-top: -5px;
+  animation: hlChevronCascade 1.6s ease-in-out infinite;
+}
+
+.hl-triple-chevron svg:nth-child(1) {
+  margin-top: 0;
+  animation-delay: 0s;
+}
+
+.hl-triple-chevron svg:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.hl-triple-chevron svg:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+@keyframes hlChevronCascade {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(-2px);
+  }
+  50% {
+    opacity: 0.95;
+    transform: translateY(3px);
+  }
+}
+
+/* =========================================================
+   8. LAPTOP & MOBILE RESPONSIVENESS
    ========================================================= */
 @media (max-width: 1180px) {
   .hl-split-grid {
@@ -587,7 +674,7 @@
   }
 
   .hl-ig-frame-crop {
-    height: 325px;
+    height: 315px;
   }
 
   .hl-yt-deck {
@@ -596,17 +683,12 @@
 }
 
 @media (max-width: 880px) {
-  .hl-scroll-track {
-    height: 135vh;
+  .hl-pin-track {
+    height: 195vh;
   }
 
-  .hl-title-stage {
-    transform: translate3d(0, calc(var(--hl-dock) * (-50vh + 5.6rem)), 0)
-      scale(var(--hl-title-scale));
-  }
-
-  .hl-showcase-stage {
-    padding-top: 5.5rem;
+  .hl-depth-plane {
+    padding-top: 5.4rem;
   }
 
   .hl-split-grid {
@@ -619,7 +701,7 @@
   }
 
   .hl-ig-frame-crop {
-    height: 260px;
+    height: 255px;
   }
 
   .hl-yt-deck {
